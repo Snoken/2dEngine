@@ -1,17 +1,15 @@
 #include "actor.h"
 
-void actor::moveRight()
+void actor::move( double multiplier )
 {
-	GLfloat dif = walkSpeed * intervalMS/1000;
-	this->origin.x += dif;
+	GLfloat difX = runSpeed * (GLfloat)multiplier/15;
+	this->origin.x += difX;
 	for( list<vertex>::iterator itr = points.begin(); itr != points.end(); ++itr )
-		itr->x += dif;
+		itr->x += difX;
 }
 
-void actor::moveLeft()
+void actor::jump()
 {
-	GLfloat dif = walkSpeed * intervalMS/1000;
-	this->origin.x -= dif;
-	for( list<vertex>::iterator itr = points.begin(); itr != points.end(); ++itr )
-		itr->x -= dif;
+	bOnGround = false;
+	vertSpeed = jumpSpeed;
 }

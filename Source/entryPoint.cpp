@@ -2,6 +2,12 @@
 #include <math.h>
 #include <windows.h>
 #include "actor.h"
+#include <string>
+#include <iostream>
+#include <math.h>
+#include "physics.h"
+#include "collision.h"
+#include <map>
 
 using namespace std;
 GLfloat mouseX, mouseY;
@@ -10,7 +16,20 @@ list<baseObject> objects;
 list<baseObject::vertex> vertices;
 actor *player = NULL;
 GLfloat aspect, trans = 0.0f;
+long double elapsed, prevElapsed;
+int lastKeyPress;
+double multiplier, timeOnKey, timeStartOnKey;
+string lastKey = "none";
+float timeToImpact = 0;
+map<int, bool> keyMap;
 
+void initKeyMap()
+{
+	keyMap.insert( make_pair( 'w', false ));
+	keyMap.insert( make_pair( 'a', false ));
+	keyMap.insert( make_pair( 's', false ));
+	keyMap.insert( make_pair( 'd', false ));
+}
 void mydisplay(){}
 
 void mouse(int btn, int state, int x, int y)
@@ -74,6 +93,7 @@ void makeObjects()
 
 void redraw()
 {	
+	
 	glClear(GL_COLOR_BUFFER_BIT);
 	//draw objects
 	for( list<baseObject>::iterator objItr = objects.begin(); objItr != objects.end(); ++objItr )
@@ -87,10 +107,9 @@ void redraw()
 
 	//draw player
 	glBegin(GL_POLYGON);
-	GLfloat *currColor = player->getColor();
+	GLfloat *currColor = player->color;
 	glColor4f(currColor[0], currColor[1], currColor[2], currColor[3]);
-	list<baseObject::vertex> currPts = player->getPoints();
-	for( list<baseObject::vertex>::iterator vertItr = currPts.begin(); vertItr != currPts.end(); ++vertItr )
+	for( list<baseObject::vertex>::iterator vertItr = player->points.begin(); vertItr != player->points.end(); ++vertItr )
 		glVertex2f(vertItr->x, vertItr->y);
 	glEnd();
 
@@ -106,19 +125,67 @@ void redraw()
 	glutSwapBuffers();
 }
 
+void keyUp(unsigned char key, int x, int y)
+{
+	timeOnKey = 0;
+	map<int, bool>::iterator currKey = keyMap.find(key);
+	if( currKey != keyMap.end() )
+	{
+		currKey->second = false;
+		if( key == 'd' || key == 'D' || key == 'a' || key == 'A' )
+		{
+			multiplier = 0;
+			cout << endl;
+		}
+	}
+}
+
+void updatePlayerLocation( const long double & elapsed )
+{
+	if( multiplier != 0.0f )
+	{
+		player->move( multiplier );
+		cout << multiplier << endl;
+	}
+	if( !player->bOnGround )
+	{
+		actor *temp = new actor(*player);
+		physics::applyGravity( temp, elapsed );
+		if(collision::timeToCollision( *temp, *(objects.begin()) ) > 0)
+		{
+			player=temp;
+			timeToImpact = collision::timeToCollision( *temp, *(objects.begin()) );
+		}
+		else
+			physics::moveByTime( player, timeToImpact );
+	}
+}
+
 void mykey(unsigned char key, int x, int y)
 {
 	if(key == 'W' || key == 'w')
 	{
+		map<int, bool>::iterator currKey = keyMap.find('w');
+		currKey->second = true;
 	}
 	if(key == 'A' || key == 'a')
 	{
+		map<int, bool>::iterator currKey = keyMap.find('a');
+		currKey->second = true;
+		//trans += .05f;
+		//reshape(width, height);
 	}
 	if(key == 'D' || key == 'd')
 	{
+		map<int, bool>::iterator currKey = keyMap.find('d');
+		currKey->second = true;
+		//trans -= .05f;
+		//reshape(width, height);
 	}
 	else if(key == 'S' || key == 's')
 	{
+		map<int, bool>::iterator currKey = keyMap.find('s');
+		currKey->second = true;
 	}
 }
 
@@ -126,27 +193,50 @@ void arrows(int key, int x, int y)
 {
 	if(key == GLUT_KEY_LEFT)
 	{
-		player->moveLeft();
-		//trans += .05f;
-		//reshape(width, height);
+		
 	}
 	else if(key == GLUT_KEY_RIGHT)
 	{
-		player->moveRight();
-		//trans -= .05f;
-		//reshape(width, height);
+		
 	}
 }
 
 void idleFunction(void)
 {
+	prevElapsed = elapsed;
+	elapsed = glutGet(GLUT_ELAPSED_TIME)/1000.0;
+	if (keyMap.find('a')->second == true)
+	{
+		if( multiplier == 0 )
+			multiplier = -.1;
+		else if( multiplier > -1.0 )
+			multiplier *= 1.2;
+		else
+			multiplier = -1.0;
+	}
+	if (keyMap.find('d')->second == true)
+	{
+		if( multiplier == 0 )
+			multiplier = .1;
+		else if( multiplier < 1.0 )
+			multiplier *= 1.2;
+		else
+			multiplier = 1.0;
+	}
+	if (keyMap.find('w')->second == true)
+	{
+		if( player->bOnGround )
+		{
+			player->jump();
+		}
+	}
+
+	updatePlayerLocation( elapsed - prevElapsed );
+
+	string elapsedStr = "Elapsed: " + to_string(elapsed);
+	glutSetWindowTitle( elapsedStr.c_str() );
 	redraw();
 }
-
-/*void timerFunction(int Value)
-{
-glutTimerFunc(actor::intervalMS, timerFunction, 1);
-}*/
 
 void passiveMouse(int x, int y)
 {
@@ -176,8 +266,9 @@ int main(int argc, char** argv)
 	GLfloat color[4] = {0.0f, 1.0f, 0.0f, 1.0f};
 	player = new actor(orig, vertices, color);
 
-
+	
 	makeObjects();
+	initKeyMap();
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);
 	glutInitWindowSize(width, height);
@@ -186,8 +277,8 @@ int main(int argc, char** argv)
 	glutReshapeFunc(reshape);
 	glutMouseFunc(mouse);
 	glutKeyboardFunc(mykey);
-	glutSetCursor(GLUT_CURSOR_FULL_CROSSHAIR); 
-	//glutTimerFunc(0, timerFunction, 0);
+	glutKeyboardUpFunc(keyUp);
+	glutSetCursor(GLUT_CURSOR_FULL_CROSSHAIR);
 	glutIdleFunc(idleFunction);
 	glutPassiveMotionFunc( passiveMouse );
 	glutSpecialFunc(arrows);

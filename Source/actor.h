@@ -1,45 +1,42 @@
 #ifndef ACTOR_H
 #define ACTOR_H
 #include "baseObject.h"
-#include "physics.h"
+
 
 using namespace std;
-class actor : baseObject
+class actor : public baseObject
 {
 public:
-	static const unsigned int intervalMS = 33;
+	bool bGravity, bOnGround;
+	GLfloat vertSpeed;
+
 	void init()
 	{
 		walkSpeed = 0.2f;
-		runSpeed = 0.4f;
-		jumpSpeed = 0.3f;
-		bOnGround = true;
+		runSpeed = 0.5f;
+		jumpSpeed = 3.0f;
+		vertSpeed = 0.0f;
+		bOnGround = false;
 	}
 	actor(vertex origin, list<vertex> points):baseObject(origin, points)
 	{
 		init();
-	};
+	}
 
 	actor(vertex origin, list<vertex> points, GLfloat color[4] ):baseObject(origin, points, color)
 	{
 		init();
-	};	
+	}
 
-	void moveRight();
-	void moveLeft();
+	actor(const actor& old):baseObject(old)
+	{
+		*this = old;
+	}
+
+	void move( double multiplier );
 	void jump();
-	GLfloat *getColor()
-	{
-		return color;
-	}
-	list<vertex> getPoints()
-	{
-		return points;
-	}
 
 private:
-	bool bOnGround;
-	physics::vector aim;
 	GLfloat walkSpeed, runSpeed, jumpSpeed;
 };
 #endif

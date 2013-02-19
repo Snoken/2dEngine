@@ -61,11 +61,15 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="actor.cpp" />
+    <ClCompile Include="collision.cpp" />
     <ClCompile Include="entryPoint.cpp" />
+    <ClCompile Include="physics.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="actor.h" />
     <ClInclude Include="baseObject.h" />
+    <ClInclude Include="collision.h" />
+    <ClInclude Include="ground.h" />
     <ClInclude Include="physics.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
