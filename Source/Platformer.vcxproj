@@ -60,6 +60,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="actor.cpp" />
+    <ClCompile Include="entryPoint.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="actor.h" />
+    <ClInclude Include="baseObject.h" />
+    <ClInclude Include="physics.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
