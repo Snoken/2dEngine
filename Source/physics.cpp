@@ -31,10 +31,18 @@ float physics::travelTime( float d, float v, float a )
 	return (vf - abs(v)) / abs(a);
 }
 
-void physics::moveByTime( actor *curr, float time )
+void physics::moveByTimeX( actor *curr, float time )
 {
+	curr->origin.x += curr->getRunSpeed() * (float)time;
+	for( list<baseObject::vertex>::iterator itr = curr->points.begin(); itr != curr->points.end(); ++itr )
+	{
+		itr->x += curr->getRunSpeed() * (float)time;
+	}
+	curr->updateMaxMin();
+}
 
-	//TODO: Add ground actors, check for collision with them, set bOnGround accordingly
+void physics::moveByTimeY( actor *curr, float time )
+{
 	curr->vertSpeed += (float)time * aGravity;
 	curr->origin.y += curr->vertSpeed * (float)time;
 	for( list<baseObject::vertex>::iterator itr = curr->points.begin(); itr != curr->points.end(); ++itr )

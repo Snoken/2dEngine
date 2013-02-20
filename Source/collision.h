@@ -15,8 +15,10 @@ namespace collision
 	//check if one object is inside another
 	bool areColliding( baseObject one, baseObject two );
 
-	float timeToCollision( actor one, baseObject two );
+	float timeToCollisionY( actor one, baseObject two );
 
 	bool above( actor one, baseObject two );
+
+	bool nextTo( actor one, baseObject two );
 }
 #endif

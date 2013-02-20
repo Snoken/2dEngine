@@ -74,6 +74,7 @@
     <ClInclude Include="collision.h" />
     <ClInclude Include="ground.h" />
     <ClInclude Include="physics.h" />
+    <ClInclude Include="prop.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

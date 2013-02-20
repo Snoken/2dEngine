@@ -10,7 +10,8 @@ namespace physics
 		vector():mag(0.0f),angle(0.0f){}
 	};
 	void applyGravity( actor *curr, double elapsed );
-	void moveByTime( actor *curr, float time );
+	void moveByTimeX( actor *curr, float time );
+	void moveByTimeY( actor *curr, float time );
 	float travelTime( float d, float v, float a );
 }
 #endif

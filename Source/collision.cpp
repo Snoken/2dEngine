@@ -61,7 +61,7 @@ bool collision::areColliding( baseObject one, baseObject two )
 	return false;
 }
 
-float collision::timeToCollision( actor one, baseObject two )
+float collision::timeToCollisionY( actor one, baseObject two )
 {
 	//assumes actor is actually above object
 	return physics::travelTime( one.yMin - two.yMax, one.vertSpeed, physics::aGravity );
@@ -74,4 +74,11 @@ bool collision::above( actor one, baseObject two )
 	if( (one.yMin +.01) >= two.yMax )
 		return true;
 	return false;
+}
+
+bool collision::nextTo( actor one, baseObject two )
+{
+	if( !(one.yMax > two.yMin && one.yMin < two.yMax) )
+		return false;
+	return true;
 }

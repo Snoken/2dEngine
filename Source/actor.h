@@ -38,7 +38,9 @@ public:
 		vertSpeed = jumpSpeed;
 	}
 
+	float getRunSpeed(){ return runSpeed; }
+
 private:
-	GLfloat walkSpeed, runSpeed, jumpSpeed;
+	float walkSpeed, runSpeed, jumpSpeed;
 };
 #endif
