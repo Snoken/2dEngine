@@ -14,6 +14,7 @@ void physics::applyGravity( actor *curr, double elapsed )
 	{
 		//TODO: Add ground actors, check for collision with them, set bOnGround accordingly
 		curr->vertSpeed += (float)elapsed * aGravity;
+		curr->origin.y += curr->vertSpeed * (float)elapsed;
 		for( list<baseObject::vertex>::iterator itr = curr->points.begin(); itr != curr->points.end(); ++itr )
 		{
 			itr->y += curr->vertSpeed * (float)elapsed;
@@ -35,6 +36,7 @@ void physics::moveByTime( actor *curr, float time )
 
 	//TODO: Add ground actors, check for collision with them, set bOnGround accordingly
 	curr->vertSpeed += (float)time * aGravity;
+	curr->origin.y += curr->vertSpeed * (float)time;
 	for( list<baseObject::vertex>::iterator itr = curr->points.begin(); itr != curr->points.end(); ++itr )
 	{
 		itr->y += curr->vertSpeed * (float)time;

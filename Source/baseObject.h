@@ -50,8 +50,6 @@ public:
 	{
 		*this = old;
 	}
-
-protected:
 	vertex origin;
 };
 #endif

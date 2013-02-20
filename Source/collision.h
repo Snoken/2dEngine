@@ -16,5 +16,7 @@ namespace collision
 	bool areColliding( baseObject one, baseObject two );
 
 	float timeToCollision( actor one, baseObject two );
+
+	bool above( actor one, baseObject two );
 }
 #endif

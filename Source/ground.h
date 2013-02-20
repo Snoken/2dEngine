@@ -6,17 +6,11 @@
 class ground : public baseObject
 {
 public:
-	ground(vertex origin, list<vertex> points):baseObject(origin, points)
-	{
-		init();
-	};
-	actor(vertex origin, list<vertex> points, GLfloat color[4] ):baseObject(origin, points, color)
-	{
-		init();
-	};
+	ground(vertex origin, list<vertex> points):baseObject(origin, points){}
+	ground(vertex origin, list<vertex> points, GLfloat color[4] ):baseObject(origin, points, color){}
+	ground(const baseObject& base):baseObject(base){}
 
 private:
 	bool bCollision;
-	list<vertex> collisionFaceCoords;
 };
 #endif

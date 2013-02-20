@@ -28,13 +28,15 @@ public:
 		init();
 	}
 
-	actor(const actor& old):baseObject(old)
-	{
-		*this = old;
-	}
+	actor(const baseObject& base):baseObject(base){ init(); }
+	actor(const actor& old):baseObject(old){ *this = old; }
 
 	void move( double multiplier );
-	void jump();
+	void jump()
+	{
+		bOnGround = false;
+		vertSpeed = jumpSpeed;
+	}
 
 private:
 	GLfloat walkSpeed, runSpeed, jumpSpeed;
