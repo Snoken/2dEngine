@@ -6,6 +6,7 @@
 #include <iostream>
 
 #include "actor.h"
+#include "prop.h"
 #include "physics.h"
 #include "collision.h"
 #include "ground.h"
@@ -13,7 +14,8 @@
 using namespace std;
 
 //global containers
-list<baseObject> objects;
+list<baseObject> backgroundObjs;
+list<prop> foregroundObjs;
 list<ground> groundObjs;
 list<baseObject::vertex> vertices;
 map<int, bool> keyMap;
@@ -84,9 +86,10 @@ void makeObjects()
 	groundObjs.push_back( makeRectangle( baseObject::vertex( 0.0f, -0.95f ), 20.0f, .1f ) );
 	groundObjs.push_back( makeRectangle( baseObject::vertex( 0.5f, -0.7f ), .5f, .05f ) );
 	groundObjs.push_back( makeRectangle( baseObject::vertex( 0.75f, -0.55f ), .5f, .05f ) );
+	groundObjs.push_back( makeRectangle( baseObject::vertex( 1.625f, -.775f ), .25f, .25f ) );
 
-	GLfloat color[4] = {1.0f, 0.0f, 0.0f, 1.0f};
-	objects.push_back( makeRectangle( baseObject::vertex( 1.625f, -.775f ), .25f, .25f, color) );
+	//GLfloat color[4] = {1.0f, 0.0f, 0.0f, 1.0f};
+	//foregroundObjs.push_back( prop(makeRectangle( baseObject::vertex( 1.625f, -.775f ), .25f, .25f, color ), true) );
 }
 
 void redraw()
@@ -98,10 +101,10 @@ void redraw()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 	glBegin( GL_QUADS );
-	glTexCoord2f(0.0,0.0); glVertex2f(-aspect,-1.0);
-	glTexCoord2f(0.0,1.0); glVertex2f(-aspect,1.0);
-	glTexCoord2f(1.0,1.0); glVertex2f(aspect,1.0);
-	glTexCoord2f(1.0,0.0); glVertex2f(aspect,-1.0);
+	glTexCoord2f(0.0,0.0); glVertex2f(-aspect+player->origin.x,-1.0);
+	glTexCoord2f(0.0,1.0); glVertex2f(-aspect+player->origin.x,1.0);
+	glTexCoord2f(1.0,1.0); glVertex2f(aspect+player->origin.x,1.0);
+	glTexCoord2f(1.0,0.0); glVertex2f(aspect+player->origin.x,-1.0);
 	glEnd();
 
 	glBindTexture( GL_TEXTURE_2D, 0 );
@@ -116,8 +119,8 @@ void redraw()
 		glEnd();
 	}
 
-	//draw objects
-	for( list<baseObject>::iterator objItr = objects.begin(); objItr != objects.end(); ++objItr )
+	//draw background backgroundObjs
+	for( list<baseObject>::iterator objItr = backgroundObjs.begin(); objItr != backgroundObjs.end(); ++objItr )
 	{
 		glBegin(GL_POLYGON);
 		glColor4f(objItr->color[0], objItr->color[1], objItr->color[2], objItr->color[3]);
@@ -133,6 +136,16 @@ void redraw()
 	for( list<baseObject::vertex>::iterator vertItr = player->points.begin(); vertItr != player->points.end(); ++vertItr )
 		glVertex2f(vertItr->x, vertItr->y);
 	glEnd();
+
+	//draw foreground backgroundObjs
+	for( list<prop>::iterator objItr = foregroundObjs.begin(); objItr != foregroundObjs.end(); ++objItr )
+	{
+		glBegin(GL_POLYGON);
+		glColor4f(objItr->color[0], objItr->color[1], objItr->color[2], objItr->color[3]);
+		for( list<baseObject::vertex>::iterator vertItr = objItr->points.begin(); vertItr != objItr->points.end(); ++vertItr )
+			glVertex2f(vertItr->x, vertItr->y);
+		glEnd();
+	}
 
 	glutSwapBuffers();
 }
@@ -153,9 +166,37 @@ float pointDistance( const baseObject::vertex & one, const baseObject::vertex & 
 	return sqrt( pow(two.x - one.x, 2) + pow(two.y - one.y, 2) );
 }
 
+ground *getNearestWall()
+{
+	//map to store distances to each wall, keyed by distance for auto-sort on distance
+	map<float, ground*> distances; 
+
+	//build map
+	if( multiplier > 0)
+	{
+		for( list<ground>::iterator itr = groundObjs.begin(); itr != groundObjs.end(); ++itr )
+			distances.insert( make_pair( abs(itr->xMin-player->xMax), &(*itr) ) );
+	}
+	else
+	{
+		for( list<ground>::iterator itr = groundObjs.begin(); itr != groundObjs.end(); ++itr )
+			distances.insert( make_pair( abs(itr->xMax-player->xMin), &(*itr) ) );
+	}
+	//if the player is not above the closest object, remove it
+	while( !collision::nextTo( *player, *(distances.begin()->second) ) )
+	{
+		distances.erase(distances.begin());
+		//return NULL pointer if the map is now empty
+		if( distances.empty() )
+			return NULL;
+	}
+	//return pointer to closest ground object which player is above
+	return distances.begin()->second;
+}
+
 ground *getCurrentGround()
 {
-	//map to store distances to each ground object, keyed by distance for auto-sort on distance
+	//map to store max height for each ground object, keyed by height for auto-sort on distance
 	map<float, ground*, greater<float>> distances; 
 
 	//build map
@@ -178,8 +219,40 @@ ground *getCurrentGround()
 void updatePlayerLocation( const long double & elapsed )
 {
 	//respond to input if needed
+	actor *temp = new actor(*player);
 	if( multiplier != 0.0f )
-		player->move( multiplier );
+	{
+		ground *closestWall = getNearestWall();
+
+		bool colliding = false;
+		if( multiplier > 0 && closestWall != NULL )
+		{
+			if( abs(closestWall->xMin - player->xMax) < .01 )
+				colliding = true;
+		}
+		else if( multiplier < 0 && closestWall != NULL )
+		{
+			if( abs(closestWall->xMax - player->xMin) < .01 )
+				colliding = true;
+		}
+		if( colliding )
+			return;
+		temp->move( multiplier );
+		if( closestWall == NULL )
+			player = temp;
+		else if( collision::areColliding( *temp, *closestWall ) )
+		{
+			float timeToImpact;
+			if( multiplier > 0 )
+				timeToImpact = abs(closestWall->xMin - player->xMax) / (player->getRunSpeed()*(float)multiplier);
+			else
+				timeToImpact = abs(closestWall->xMax - player->xMin) / (player->getRunSpeed()*(float)-multiplier);
+			physics::moveByTimeX( player, timeToImpact );
+			multiplier = 0.0f;
+		}
+		else
+			player = temp;
+	}
 
 	//figure out which ground object the player is currently above
 	ground *belowPlayer = getCurrentGround();
@@ -192,21 +265,21 @@ void updatePlayerLocation( const long double & elapsed )
 	if( !player->bOnGround )
 	{
 		//temporary copy of player to stop player
-		actor *temp = new actor(*player);
+		temp = new actor(*player);
 		//apply gravity to copy to make sure they don't fall through world
 		physics::applyGravity( temp, elapsed );
 		//if no ground at all, player free falls
 		if(belowPlayer == NULL)
 			player=temp;
 		//if next iter of motion still leaves player above ground, do it
-		else if(collision::timeToCollision( *temp, *belowPlayer ) > 0)
+		else if(collision::timeToCollisionY( *temp, *belowPlayer ) > 0)
 		{
 			player=temp;
-			timeToImpact = collision::timeToCollision( *temp, *belowPlayer );
+			timeToImpact = collision::timeToCollisionY( *temp, *belowPlayer );
 		}
 		//otherwise, move player just enough to be on ground
 		else
-			physics::moveByTime( player, timeToImpact );
+			physics::moveByTimeY( player, timeToImpact );
 	}
 }
 
@@ -323,10 +396,10 @@ int main(int argc, char** argv)
 	/* load an image file directly as a new OpenGL texture */
 	tex_2d = SOIL_load_OGL_texture
 		(
-		"../Assets/Textures/texture.jpg",
+		"../Assets/Textures/texture.png",
 		SOIL_LOAD_AUTO,
 		SOIL_CREATE_NEW_ID,
-		SOIL_FLAG_MIPMAPS | SOIL_FLAG_INVERT_Y | SOIL_FLAG_NTSC_SAFE_RGB | SOIL_FLAG_COMPRESS_TO_DXT
+		SOIL_FLAG_MIPMAPS | SOIL_FLAG_INVERT_Y | SOIL_FLAG_NTSC_SAFE_RGB | SOIL_FLAG_COMPRESS_TO_DXT | SOIL_FLAG_TEXTURE_REPEATS
 		);
 
 	/* check for an error during the load process */

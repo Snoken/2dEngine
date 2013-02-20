@@ -6,10 +6,5 @@ void actor::move( double multiplier )
 	this->origin.x += difX;
 	for( list<vertex>::iterator itr = points.begin(); itr != points.end(); ++itr )
 		itr->x += difX;
-}
-
-void actor::jump()
-{
-	bOnGround = false;
-	vertSpeed = jumpSpeed;
+	updateMaxMin();
 }
