@@ -1,14 +1,14 @@
-#include <iostream>
-#include <math.h>
-#include <windows.h>
-#include "actor.h"
+#define _CRT_SECURE_NO_DEPRECATE
+#include "soil\SOIL.h"
+
 #include <string>
+#include <map>
 #include <iostream>
-#include <math.h>
+
+#include "actor.h"
 #include "physics.h"
 #include "collision.h"
 #include "ground.h"
-#include <map>
 
 using namespace std;
 
@@ -24,6 +24,7 @@ actor *player = NULL;
 float aspect, trans = 0.0f, timeToImpact = 0.0f;
 long double elapsed, prevElapsed;
 double multiplier;
+GLuint tex_2d;
 
 void initKeyMap()
 {
@@ -62,56 +63,48 @@ void reshape(GLsizei newWidth, GLsizei newHeigth) {  // GLsizei for non-negative
 	}
 }
 
-baseObject makeRectangle( baseObject::vertex origin, float width, float height )
+baseObject makeRectangle( baseObject::vertex origin, float width, float height, GLfloat color[4] )
 {
 	list<baseObject::vertex> rectVerts;
 	rectVerts.push_back(baseObject::vertex(origin.x - width/2, origin.y - height/2));
 	rectVerts.push_back(baseObject::vertex(origin.x - width/2, origin.y + height/2));
 	rectVerts.push_back(baseObject::vertex(origin.x + width/2, origin.y + height/2));
 	rectVerts.push_back(baseObject::vertex(origin.x + width/2, origin.y - height/2));
-	return baseObject(origin, rectVerts);
+	return baseObject(origin, rectVerts, color);
+}
+
+baseObject makeRectangle( baseObject::vertex origin, float width, float height )
+{
+	GLfloat color[4] = {1.0f, 1.0f, 1.0f, 1.0f};
+	return makeRectangle(origin, width, height, color);
 }
 
 void makeObjects()
 {
+	groundObjs.push_back( makeRectangle( baseObject::vertex( 0.0f, -0.95f ), 20.0f, .1f ) );
 	groundObjs.push_back( makeRectangle( baseObject::vertex( 0.5f, -0.7f ), .5f, .05f ) );
 	groundObjs.push_back( makeRectangle( baseObject::vertex( 0.75f, -0.55f ), .5f, .05f ) );
 
-	vertices.clear();
-	//rectangle platform origin
-	baseObject::vertex orig(-6.5f, -0.725f);
-	//rectangle platform vertices
-	vertices.push_back(baseObject::vertex(-8.0f,-.75f));
-	vertices.push_back(baseObject::vertex(-8.0f,-.7f));
-	vertices.push_back(baseObject::vertex(-5.0f,-.7f));
-	vertices.push_back(baseObject::vertex(-5.0f,-.75f));
-	groundObjs.push_back(ground(orig, vertices));
-
-	vertices.clear();
-	//rectangle platform origin
-	orig = baseObject::vertex(0.0f, -0.95f);
-	//rectangle platform vertices
-	vertices.push_back(baseObject::vertex(-10.0f,-1.0f));
-	vertices.push_back(baseObject::vertex(-10.0f,-.9f));
-	vertices.push_back(baseObject::vertex(10.0f,-.9f));
-	vertices.push_back(baseObject::vertex(10.0f,-1.0f));
-	groundObjs.push_back(ground(orig, vertices));
-
-	vertices.clear();
-	//square orig
-	orig = baseObject::vertex( 1.625f, -.775f );
-	//square vertices
-	vertices.push_back(baseObject::vertex(1.5f,-.65f));
-	vertices.push_back(baseObject::vertex(1.5f,-.9f));
-	vertices.push_back(baseObject::vertex(1.75f,-.9f));
-	vertices.push_back(baseObject::vertex(1.75f,-.65f));
 	GLfloat color[4] = {1.0f, 0.0f, 0.0f, 1.0f};
-	objects.push_back(baseObject(orig, vertices, color));
+	objects.push_back( makeRectangle( baseObject::vertex( 1.625f, -.775f ), .25f, .25f, color) );
 }
 
 void redraw()
 {	
 	glClear(GL_COLOR_BUFFER_BIT);
+
+	glEnable( GL_TEXTURE_2D );
+	glBindTexture( GL_TEXTURE_2D, tex_2d );
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+	glBegin( GL_QUADS );
+	glTexCoord2f(0.0,0.0); glVertex2f(-aspect,-1.0);
+	glTexCoord2f(0.0,1.0); glVertex2f(-aspect,1.0);
+	glTexCoord2f(1.0,1.0); glVertex2f(aspect,1.0);
+	glTexCoord2f(1.0,0.0); glVertex2f(aspect,-1.0);
+	glEnd();
+
+	glBindTexture( GL_TEXTURE_2D, 0 );
 
 	//draw ground
 	for( list<ground>::iterator objItr = groundObjs.begin(); objItr != groundObjs.end(); ++objItr )
@@ -163,11 +156,11 @@ float pointDistance( const baseObject::vertex & one, const baseObject::vertex & 
 ground *getCurrentGround()
 {
 	//map to store distances to each ground object, keyed by distance for auto-sort on distance
-	map<float, ground*> distances;
+	map<float, ground*, greater<float>> distances; 
 
 	//build map
 	for( list<ground>::iterator itr = groundObjs.begin(); itr != groundObjs.end(); ++itr )
-		distances.insert( make_pair( pointDistance( player->origin, itr->origin ), &(*itr) ) );
+		distances.insert( make_pair( itr->yMax, &(*itr) ) );
 
 	//if the player is not above the closest object, remove it
 	while( !collision::above( *player, *(distances.begin()->second) ) )
@@ -304,14 +297,8 @@ void idleFunction(void)
 void initPlayer()
 {
 	//square orig
-	baseObject::vertex orig = baseObject::vertex( 0.0f, 0.0f );
-	//square vertices
-	vertices.push_back(baseObject::vertex(.075f,-.075f));
-	vertices.push_back(baseObject::vertex(.075f,.075f));
-	vertices.push_back(baseObject::vertex(-.075f,.075f));
-	vertices.push_back(baseObject::vertex(-.075f,-.075f));
 	GLfloat color[4] = {0.0f, 1.0f, 0.0f, 1.0f};
-	player = new actor(orig, vertices, color);
+	player = new actor(makeRectangle( baseObject::vertex( 0.0f, 0.0f ), 0.05f, .15f, color ));
 }
 
 int main(int argc, char** argv)
@@ -332,6 +319,22 @@ int main(int argc, char** argv)
 	glutKeyboardUpFunc(keyUp);
 	glutSetCursor(GLUT_CURSOR_FULL_CROSSHAIR);
 	glutIdleFunc(idleFunction);
+
+	/* load an image file directly as a new OpenGL texture */
+	tex_2d = SOIL_load_OGL_texture
+		(
+		"../Assets/Textures/texture.jpg",
+		SOIL_LOAD_AUTO,
+		SOIL_CREATE_NEW_ID,
+		SOIL_FLAG_MIPMAPS | SOIL_FLAG_INVERT_Y | SOIL_FLAG_NTSC_SAFE_RGB | SOIL_FLAG_COMPRESS_TO_DXT
+		);
+
+	/* check for an error during the load process */
+	if( 0 == tex_2d )
+	{
+		cout << "SOIL loading error: " << SOIL_last_result() << endl;
+	}
+
 	glutMainLoop();
 	return 0;
 }

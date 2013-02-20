@@ -46,10 +46,6 @@ public:
 			this->color[i] = color[i];
 	}
 
-	baseObject(const baseObject& old)
-	{
-		*this = old;
-	}
 	vertex origin;
 };
 #endif
