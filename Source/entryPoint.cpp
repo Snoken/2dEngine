@@ -26,7 +26,19 @@ actor *player = NULL;
 float aspect, trans = 0.0f, timeToImpact = 0.0f;
 long double elapsed, prevElapsed;
 double multiplier;
-GLuint tex_2d;
+GLuint tSky, tSkyLower, tDirt, tChar;
+
+GLuint loadTexture( char * filename )
+{
+	/* load an image file directly as a new OpenGL texture */
+	return SOIL_load_OGL_texture
+		(
+		filename,
+		SOIL_LOAD_AUTO,
+		SOIL_CREATE_NEW_ID,
+		SOIL_FLAG_MIPMAPS | SOIL_FLAG_INVERT_Y | SOIL_FLAG_NTSC_SAFE_RGB | SOIL_FLAG_COMPRESS_TO_DXT | SOIL_FLAG_TEXTURE_REPEATS
+		);
+}
 
 void initKeyMap()
 {
@@ -95,16 +107,26 @@ void makeObjects()
 void redraw()
 {	
 	glClear(GL_COLOR_BUFFER_BIT);
-
 	glEnable( GL_TEXTURE_2D );
-	glBindTexture( GL_TEXTURE_2D, tex_2d );
+	glColor3ub(255, 255, 255);
+
+	//big backdrop
+	glBindTexture( GL_TEXTURE_2D, tSky );
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-	glBegin( GL_QUADS );
-	glTexCoord2f(0.0,0.0); glVertex2f(-aspect+player->origin.x,-1.0);
-	glTexCoord2f(0.0,1.0); glVertex2f(-aspect+player->origin.x,1.0);
-	glTexCoord2f(1.0,1.0); glVertex2f(aspect+player->origin.x,1.0);
-	glTexCoord2f(1.0,0.0); glVertex2f(aspect+player->origin.x,-1.0);
+	glBegin(GL_QUADS);
+	glTexCoord2f(0.0f,0.0f); glVertex2f(-aspect+player->origin.x,-1.0);
+	glTexCoord2f(0.0f,1.0f); glVertex2f(-aspect+player->origin.x,1.0);
+	glTexCoord2f(aspect/0.1f,1.0f); glVertex2f(aspect+player->origin.x,1.0);
+	glTexCoord2f(aspect/0.1f,0.0f); glVertex2f(aspect+player->origin.x,-1.0);
+	glEnd();
+
+	//sky gradient
+	glBindTexture( GL_TEXTURE_2D, tSkyLower );
+	glBegin(GL_QUADS);
+	glTexCoord2f(0.0f,0.0f); glVertex2f(-aspect+player->origin.x,-0.9f);
+	glTexCoord2f(0.0f,1.0f); glVertex2f(-aspect+player->origin.x,-0.8f);
+	glTexCoord2f(aspect/0.1f,1.0f); glVertex2f(aspect+player->origin.x,-0.8f);
+	glTexCoord2f(aspect/0.1f,0.0f); glVertex2f(aspect+player->origin.x,-0.9f);
 	glEnd();
 
 	glBindTexture( GL_TEXTURE_2D, 0 );
@@ -130,11 +152,26 @@ void redraw()
 	}
 
 	//draw player
-	glBegin(GL_POLYGON);
 	GLfloat *currColor = player->color;
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glColor4f(currColor[0], currColor[1], currColor[2], currColor[3]);
-	for( list<baseObject::vertex>::iterator vertItr = player->points.begin(); vertItr != player->points.end(); ++vertItr )
-		glVertex2f(vertItr->x, vertItr->y);
+	glBindTexture( GL_TEXTURE_2D, tChar );
+	glBegin(GL_QUADS);
+	if( multiplier >= 0)
+	{
+		glTexCoord2f(0.0f,0.0f); glVertex2f(player->xMin,player->yMin);
+		glTexCoord2f(0.0f,1.0f); glVertex2f(player->xMin,player->yMax);
+		glTexCoord2f(1.0f,1.0f); glVertex2f(player->xMax,player->yMax);
+		glTexCoord2f(1.0f,0.0f); glVertex2f(player->xMax,player->yMin);
+	}
+	else
+	{
+		glTexCoord2f(1.0f,0.0f); glVertex2f(player->xMin,player->yMin);
+		glTexCoord2f(1.0f,1.0f); glVertex2f(player->xMin,player->yMax);
+		glTexCoord2f(0.0f,1.0f); glVertex2f(player->xMax,player->yMax);
+		glTexCoord2f(0.0f,0.0f); glVertex2f(player->xMax,player->yMin);
+	}
 	glEnd();
 
 	//draw foreground backgroundObjs
@@ -146,6 +183,16 @@ void redraw()
 			glVertex2f(vertItr->x, vertItr->y);
 		glEnd();
 	}
+
+	//ground texturing
+	glColor3ub(255, 255, 255);
+	glBindTexture( GL_TEXTURE_2D, tDirt );
+	glBegin(GL_QUADS);
+	glTexCoord2f(0.0f,0.0f); glVertex2f(-10.0f,-1.0f);
+	glTexCoord2f(0.0f,1.0f); glVertex2f(-10.0f,-0.9f);
+	glTexCoord2f(20.0f/0.1f,1.0f); glVertex2f(10.0f,-0.9f);
+	glTexCoord2f(20.0f/0.1f,0.0f); glVertex2f(10.0f,-1.0f);
+	glEnd();
 
 	glutSwapBuffers();
 }
@@ -183,13 +230,13 @@ ground *getNearestWall()
 			distances.insert( make_pair( abs(itr->xMax-player->xMin), &(*itr) ) );
 	}
 	//if the player is not above the closest object, remove it
-	while( !collision::nextTo( *player, *(distances.begin()->second) ) )
+	/*while( !collision::nextTo( *player, *(distances.begin()->second) ) )
 	{
 		distances.erase(distances.begin());
 		//return NULL pointer if the map is now empty
 		if( distances.empty() )
 			return NULL;
-	}
+	}*/
 	//return pointer to closest ground object which player is above
 	return distances.begin()->second;
 }
@@ -227,31 +274,37 @@ void updatePlayerLocation( const long double & elapsed )
 		bool colliding = false;
 		if( multiplier > 0 && closestWall != NULL )
 		{
-			if( abs(closestWall->xMin - player->xMax) < .01 )
+			if( abs(closestWall->xMin - player->xMax) < .01 && collision::nextTo( *player, *closestWall ) && !collision::above( *player, *closestWall ) )
 				colliding = true;
 		}
 		else if( multiplier < 0 && closestWall != NULL )
 		{
-			if( abs(closestWall->xMax - player->xMin) < .01 )
+			if( abs(closestWall->xMax - player->xMin) < .01 && collision::nextTo( *player, *closestWall ) && !collision::above( *player, *closestWall  ) )
 				colliding = true;
 		}
-		if( colliding )
-			return;
-		temp->move( multiplier );
-		if( closestWall == NULL )
-			player = temp;
-		else if( collision::areColliding( *temp, *closestWall ) )
+
+		//only move player in x direction if not against wall
+		if( !colliding )
 		{
-			float timeToImpact;
-			if( multiplier > 0 )
-				timeToImpact = abs(closestWall->xMin - player->xMax) / (player->getRunSpeed()*(float)multiplier);
+			temp->move( multiplier );
+
+			if( closestWall == NULL )
+				player = temp;
+			else if( collision::areColliding( *temp, *closestWall ) && !collision::above( *temp, *closestWall ) )
+			{
+				float timeToImpact;
+				if( multiplier > 0 )
+					timeToImpact = abs(closestWall->xMin - player->xMax) / (player->getRunSpeed()*(float)multiplier);
+				else
+					timeToImpact = abs(closestWall->xMax - player->xMin) / (player->getRunSpeed()*(float)-multiplier);
+				if( timeToImpact > .1 )
+					timeToImpact = 0;
+				physics::moveByTimeX( player, timeToImpact );
+				multiplier = 0.0f;
+			}
 			else
-				timeToImpact = abs(closestWall->xMax - player->xMin) / (player->getRunSpeed()*(float)-multiplier);
-			physics::moveByTimeX( player, timeToImpact );
-			multiplier = 0.0f;
+				player = temp;
 		}
-		else
-			player = temp;
 	}
 
 	//figure out which ground object the player is currently above
@@ -268,9 +321,9 @@ void updatePlayerLocation( const long double & elapsed )
 		temp = new actor(*player);
 		//apply gravity to copy to make sure they don't fall through world
 		physics::applyGravity( temp, elapsed );
-		//if no ground at all, player free falls
 		if(belowPlayer == NULL)
-			player=temp;
+			//NOTE: This is a very bad thing and will break the game in a hurry
+			cout << "No ground found, using lowest object as ground" << endl;
 		//if next iter of motion still leaves player above ground, do it
 		else if(collision::timeToCollisionY( *temp, *belowPlayer ) > 0)
 		{
@@ -370,8 +423,7 @@ void idleFunction(void)
 void initPlayer()
 {
 	//square orig
-	GLfloat color[4] = {0.0f, 1.0f, 0.0f, 1.0f};
-	player = new actor(makeRectangle( baseObject::vertex( 0.0f, 0.0f ), 0.05f, .15f, color ));
+	player = new actor(makeRectangle( baseObject::vertex( 0.0f, 0.0f ), .15f/2.18f, .15f));
 }
 
 int main(int argc, char** argv)
@@ -393,20 +445,11 @@ int main(int argc, char** argv)
 	glutSetCursor(GLUT_CURSOR_FULL_CROSSHAIR);
 	glutIdleFunc(idleFunction);
 
-	/* load an image file directly as a new OpenGL texture */
-	tex_2d = SOIL_load_OGL_texture
-		(
-		"../Assets/Textures/texture.png",
-		SOIL_LOAD_AUTO,
-		SOIL_CREATE_NEW_ID,
-		SOIL_FLAG_MIPMAPS | SOIL_FLAG_INVERT_Y | SOIL_FLAG_NTSC_SAFE_RGB | SOIL_FLAG_COMPRESS_TO_DXT | SOIL_FLAG_TEXTURE_REPEATS
-		);
-
-	/* check for an error during the load process */
-	if( 0 == tex_2d )
-	{
-		cout << "SOIL loading error: " << SOIL_last_result() << endl;
-	}
+	//load textures
+	tChar = loadTexture("../Assets/Textures/char.png");
+	tDirt = loadTexture("../Assets/Textures/dirt.jpg");
+	tSky = loadTexture("../Assets/Textures/sky.jpg");
+	tSkyLower = loadTexture("../Assets/Textures/skyLower.jpg");
 
 	glutMainLoop();
 	return 0;
