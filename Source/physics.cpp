@@ -45,7 +45,6 @@ void physics::moveByTimeX( actor *curr, float time )
 
 void physics::moveByTimeY( actor *curr, float time )
 {
-	curr->vertSpeed += (float)time * aGravity;
 	curr->origin.y += curr->vertSpeed * (float)time;
 	for( list<baseObject::vertex>::iterator itr = curr->points.begin(); itr != curr->points.end(); ++itr )
 	{

@@ -7,8 +7,8 @@ using namespace std;
 class actor : public baseObject
 {
 public:
-	bool bGravity, bOnGround;
-	GLfloat vertSpeed;
+	bool bGravity, bOnGround, bOnWall;
+	GLfloat vertSpeed, slideSpeed;
 
 	void init()
 	{
@@ -16,6 +16,7 @@ public:
 		runSpeed = 0.3f;
 		jumpSpeed = 3.0f;
 		vertSpeed = 0.0f;
+		slideSpeed = -0.3f;
 		bOnGround = false;
 	}
 	actor(vertex origin, list<vertex> points):baseObject(origin, points)
@@ -37,6 +38,7 @@ public:
 
 	void move( double multiplier );
 	void moveX( float distance );
+	void moveY( float distance );
 	void jump()
 	{
 		bOnGround = false;

@@ -29,12 +29,13 @@ actor *player = NULL;
 float aspect, trans = 0.0f, timeToImpact = 0.0f, mouseX, mouseY, drawWidth = 0.0f, drawHeight = 0.0f;
 long double elapsed, prevElapsed;
 double multiplier, frame = 0;
-GLuint tSky, tSkyLower, tDirt, tPaused;
+GLuint tSky, tSkyLower, tDirt, tPaused, tSlide;
 GLuint tCharStand[4];
 GLuint tCharRun[8];
 GLuint tCharJump[5];
 GLuint tWalls[5];
-bool drawMenu, bDrawOutline;
+float wallDistance = 9999.0f;
+bool drawMenu, bDrawOutline, facingRight;
 baseObject::vertex clickLoc, drawCenter;
 
 #define SPACEBAR 32
@@ -143,10 +144,15 @@ void drawPlayer()
 	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 	if( !player->bOnGround )
 	{
-		frame += .15;
-		if( frame >= 5 )
-			frame = 4;
-		glBindTexture( GL_TEXTURE_2D, tCharJump[(int)floor(frame)] );
+		if( player->bOnWall )
+			glBindTexture( GL_TEXTURE_2D, tSlide );
+		else
+		{
+			frame += .15;
+			if( frame >= 5 )
+				frame = 4;
+			glBindTexture( GL_TEXTURE_2D, tCharJump[(int)floor(frame)] );
+		}
 	}
 	else if( multiplier == 0 )
 	{
@@ -164,7 +170,7 @@ void drawPlayer()
 	}
 
 	glBegin(GL_QUADS);
-	if( multiplier >= 0)
+	if( facingRight )
 	{
 		glTexCoord2f(0.0f,0.0f); glVertex2f(player->origin.x - .1f, player->origin.y - .1f);
 		glTexCoord2f(0.0f,1.0f); glVertex2f(player->origin.x - .1f, player->origin.y + .1f);
@@ -181,69 +187,37 @@ void drawPlayer()
 	glEnd();
 	glDisable( GL_TEXTURE_2D );
 }
-void redraw()
-{	
-	glClear(GL_COLOR_BUFFER_BIT);
-	drawSky();
 
-	//draw background objects
-	glEnable( GL_TEXTURE_2D );
-	for( list<baseObject>::iterator objItr = backgroundObjs.begin(); objItr != backgroundObjs.end(); ++objItr )
+void drawGrid()
+{
+	glBegin(GL_LINES);
+	glColor4f(1.0f, 1.0f, 1.0f, 0.25f);
+	for( float x = 0.0f; x < 100.0f; x += .05f )
 	{
-		glBegin(GL_POLYGON);
-		glBindTexture( GL_TEXTURE_2D, objItr->texture );
-		if( objItr->bSelected )
-			glColor4f(1.0f, 1.0f, 1.0f, 0.5f);
-		else
-			glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-		glTexCoord2f(0.0f,0.0f); glVertex2f(objItr->xMin,objItr->xMin);
-		glTexCoord2f(0.0f,1.0f); glVertex2f(objItr->xMin,objItr->yMax);
-		glTexCoord2f(1.0f,1.0f); glVertex2f(objItr->xMax,objItr->xMax);
-		glTexCoord2f(1.0f,0.0f); glVertex2f(objItr->xMin,objItr->xMin);
-		glEnd();
+		glVertex2f( x, 1.0f );
+		glVertex2f( x, -1.0f );
 	}
-	glDisable( GL_TEXTURE_2D );
-
-	//draw ground
-	for( list<ground>::iterator objItr = groundObjs.begin(); objItr != groundObjs.end(); ++objItr )
+	for( float x = -0.05f; x > -100.0f; x -= .05f )
 	{
-		glEnable( GL_TEXTURE_2D );
-		glBindTexture( GL_TEXTURE_2D, objItr->texture );
-		glBegin(GL_POLYGON);
-		if( objItr->bSelected )
-			glColor4f(1.0f, 1.0f, 1.0f, 0.5f);
-		else
-			glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-		if( objItr->width > objItr->height )
-		{
-			glTexCoord2f(0.0f,0.0f); glVertex2f(objItr->xMin,objItr->yMin);
-			glTexCoord2f(0.0f,1.0f); glVertex2f(objItr->xMin,objItr->yMax);
-			glTexCoord2f(objItr->width/objItr->height,1.0f); glVertex2f(objItr->xMax,objItr->yMax);
-			glTexCoord2f(objItr->width/objItr->height,0.0f); glVertex2f(objItr->xMax,objItr->yMin);
-		}
-		else
-		{
-			glTexCoord2f(0.0f,0.0f); glVertex2f(objItr->xMin,objItr->yMin);
-			glTexCoord2f(0.0f,objItr->height/objItr->width); glVertex2f(objItr->xMin,objItr->yMax);
-			glTexCoord2f(1.0f,objItr->height/objItr->width); glVertex2f(objItr->xMax,objItr->yMax);
-			glTexCoord2f(1.0f,0.0f); glVertex2f(objItr->xMax,objItr->yMin);
-		}
-		glEnd();
-		glDisable( GL_TEXTURE_2D );
+		glVertex2f( x, 1.0f );
+		glVertex2f( x, -1.0f );
 	}
 
-	drawPlayer();
-
-	//draw foreground objs
-	for( list<prop>::iterator objItr = foregroundObjs.begin(); objItr != foregroundObjs.end(); ++objItr )
+	for( float y = 0.0f; y < 1; y += .05f )
 	{
-		glBegin(GL_POLYGON);
-		glColor4f(objItr->color[0], objItr->color[1], objItr->color[2], objItr->color[3]);
-		for( list<baseObject::vertex>::iterator vertItr = objItr->points.begin(); vertItr != objItr->points.end(); ++vertItr )
-			glVertex2f(vertItr->x, vertItr->y);
-		glEnd();
+		glVertex2f( -100, y );
+		glVertex2f( 100, y );
 	}
+	for( float y = -0.05f; y > -1; y -= .05f )
+	{
+		glVertex2f( -100, y );
+		glVertex2f( 100, y );
+	}
+	glEnd();
+}
 
+void drawOutline()
+{
 	if( bDrawOutline )
 	{
 		if( abs(drawHeight) != 0.0f && abs(drawWidth) != 0.0f )
@@ -297,6 +271,73 @@ void redraw()
 			glEnd();
 		}
 	}
+}
+void redraw()
+{	
+	glClear(GL_COLOR_BUFFER_BIT);
+	drawSky();
+
+	//draw background objects
+	glEnable( GL_TEXTURE_2D );
+	for( list<baseObject>::iterator objItr = backgroundObjs.begin(); objItr != backgroundObjs.end(); ++objItr )
+	{
+		glBegin(GL_POLYGON);
+		glBindTexture( GL_TEXTURE_2D, objItr->texture );
+		if( objItr->bSelected )
+			glColor4f(1.0f, 1.0f, 1.0f, 0.5f);
+		else
+			glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+		glTexCoord2f(0.0f,0.0f); glVertex2f(objItr->xMin,objItr->xMin);
+		glTexCoord2f(0.0f,1.0f); glVertex2f(objItr->xMin,objItr->yMax);
+		glTexCoord2f(1.0f,1.0f); glVertex2f(objItr->xMax,objItr->xMax);
+		glTexCoord2f(1.0f,0.0f); glVertex2f(objItr->xMin,objItr->xMin);
+		glEnd();
+	}
+	glDisable( GL_TEXTURE_2D );
+
+	drawGrid();
+
+	//draw ground
+	for( list<ground>::iterator objItr = groundObjs.begin(); objItr != groundObjs.end(); ++objItr )
+	{
+		glEnable( GL_TEXTURE_2D );
+		glBindTexture( GL_TEXTURE_2D, objItr->texture );
+		glBegin(GL_POLYGON);
+		if( objItr->bSelected )
+			glColor4f(1.0f, 1.0f, 1.0f, 0.5f);
+		else
+			glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+		if( objItr->width > objItr->height )
+		{
+			glTexCoord2f(0.0f,0.0f); glVertex2f(objItr->xMin,objItr->yMin);
+			glTexCoord2f(0.0f,1.0f); glVertex2f(objItr->xMin,objItr->yMax);
+			glTexCoord2f(objItr->width/objItr->height,1.0f); glVertex2f(objItr->xMax,objItr->yMax);
+			glTexCoord2f(objItr->width/objItr->height,0.0f); glVertex2f(objItr->xMax,objItr->yMin);
+		}
+		else
+		{
+			glTexCoord2f(0.0f,0.0f); glVertex2f(objItr->xMin,objItr->yMin);
+			glTexCoord2f(0.0f,objItr->height/objItr->width); glVertex2f(objItr->xMin,objItr->yMax);
+			glTexCoord2f(1.0f,objItr->height/objItr->width); glVertex2f(objItr->xMax,objItr->yMax);
+			glTexCoord2f(1.0f,0.0f); glVertex2f(objItr->xMax,objItr->yMin);
+		}
+		glEnd();
+		glDisable( GL_TEXTURE_2D );
+	}
+
+	drawPlayer();
+
+	//draw foreground objs
+	for( list<prop>::iterator objItr = foregroundObjs.begin(); objItr != foregroundObjs.end(); ++objItr )
+	{
+		glBegin(GL_POLYGON);
+		glColor4f(objItr->color[0], objItr->color[1], objItr->color[2], objItr->color[3]);
+		for( list<baseObject::vertex>::iterator vertItr = objItr->points.begin(); vertItr != objItr->points.end(); ++vertItr )
+			glVertex2f(vertItr->x, vertItr->y);
+		glEnd();
+	}
+
+	drawOutline();
 	
 	if( drawMenu )
 	{
@@ -349,40 +390,9 @@ bool facing( actor one, baseObject two, bool right )
 	return false;
 }
 
-ground *getNearestWall()
-{
-	//map to store distances to each wall, keyed by distance for auto-sort on distance
-	map<float, ground*> distances; 
-	bool right;
-
-	//build map
-	if( multiplier >= 0)
-	{
-		for( list<ground>::iterator itr = groundObjs.begin(); itr != groundObjs.end(); ++itr )
-			distances.insert( make_pair( abs(itr->xMin-player->xMax), &(*itr) ) );
-		right = true;
-	}
-	else
-	{
-		for( list<ground>::iterator itr = groundObjs.begin(); itr != groundObjs.end(); ++itr )
-			distances.insert( make_pair( abs(itr->xMax-player->xMin), &(*itr) ) );
-		right = false;
-	}
-	//if the player is not above the closest object, remove it
-	while( !facing( *player, *(distances.begin()->second), right ) )
-	{
-		distances.erase(distances.begin());
-		//return NULL pointer if the map is now empty
-		if( distances.empty() )
-			return NULL;
-	}
-	//return pointer to closest ground object which player is above
-	return distances.begin()->second;
-}
-
 ground *getCurrentGround()
 {
-	//map to store max height for each ground object, keyed by height for auto-sort on distance
+	//map to store max height for each ground object, keyed by height for auto-sort on maxheight
 	map<float, ground*, greater<float>> distances; 
 
 	//build map
@@ -398,9 +408,10 @@ ground *getCurrentGround()
 			return NULL;
 	}
 	//return pointer to closest ground object which player is above
-	if( distances.empty() )
+	if( !distances.empty() )
+		return distances.begin()->second;
+	else
 		return NULL;
-	return distances.begin()->second;
 }
 
 ground *checkForWall( const float & maxDistance, float & wallDistance )
@@ -410,7 +421,7 @@ ground *checkForWall( const float & maxDistance, float & wallDistance )
 	for( list<ground>::iterator itr = groundObjs.begin(); itr != groundObjs.end(); ++itr )
 	{
 		float gapSize = 0.0f;
-		if( multiplier > 0 )
+		if( facingRight )
 			gapSize = itr->xMin - player->xMax;
 		else
 			gapSize = player->xMin - itr->xMax;
@@ -435,8 +446,34 @@ void updatePlayerLocation( const long double & elapsed )
 		//figure out which ground object the player is currently above
 		actor *temp;
 		ground *belowPlayer = getCurrentGround();
+		float maxDistance = 1.0f;
+		ground *nearby = NULL;
+		nearby = checkForWall( maxDistance, wallDistance );
+
+		if( wallDistance == 0.0f && nearby != NULL )
+			player->bOnWall = true;
+		else if( wallDistance < .015 && player->vertSpeed < 0.0f )
+		{
+			if( multiplier < 0.0f )
+				player->moveX( -(player->xMin - nearby->xMax) );
+			else
+				player->moveX( abs(nearby->xMin - player->xMax) );
+			multiplier = 0.0f;
+			player->bOnWall = true;
+			facingRight = !facingRight;
+			cout << "on wall: " << elapsed << endl;
+		}
+		else
+		{
+			if(player->bOnWall == true)
+				cout << "off wall: " << elapsed << endl;
+			player->bOnWall = false;
+		}
+
 		//if no valid ground is found or player is no longer above current,
 		//	let player fall
+		if( belowPlayer == NULL )
+			cout << "hi" << endl;
 		if( player->yMin > belowPlayer->yMax)
 			player->bOnGround = false;
 
@@ -445,7 +482,10 @@ void updatePlayerLocation( const long double & elapsed )
 		{
 			temp = new actor(*player);
 			//apply gravity to copy to make sure they don't fall through world
-			physics::applyGravity( temp, elapsed );
+			if( player->bOnWall )
+				temp->moveY( temp->slideSpeed * (float)elapsed );
+			else
+				physics::applyGravity( temp, elapsed );
 			//if next iter of motion still leaves player above ground, do it			
 			if(collision::timeToCollisionY( *temp, *belowPlayer ) > 0)
 			{
@@ -459,33 +499,34 @@ void updatePlayerLocation( const long double & elapsed )
 			}
 		}
 
-		if( multiplier != 0.0f )
+		if( multiplier != 0.0f && wallDistance != 0.0f )
 		{
-			temp = new actor(*player);
-			//check if there is a wall within 1.0f
-			float maxDistance = 1.0f, wallDistance;
-			ground *nearby = checkForWall( maxDistance, wallDistance );
-			if( nearby != NULL )
+			if( !player->bOnWall )
 			{
-				nearby->color[1] = 0.0f;
-				nearby->color[2] = 0.0f;
-			}
-			if( nearby == NULL )
-			{
-				player->move( multiplier );
-			}
-			//try moving
-			else if( wallDistance > .01 )
-			{
-				temp->move( multiplier );
-				//if we moved too far don't use temp, move player by needed distance, also set mult to 0 since a collision happened
-				if( collision::areColliding( *temp, *nearby ) )
+				temp = new actor(*player);
+				//check if there is a wall within 1.0f
+				if( nearby != NULL )
 				{
-					player->moveX( wallDistance );
-					multiplier = 0.0f;
+					nearby->color[1] = 0.0f;
+					nearby->color[2] = 0.0f;
 				}
-				else
-					player = temp;
+				if( nearby == NULL )
+				{
+					player->move( multiplier );
+				}
+				//try moving
+				else if( wallDistance > .01 )
+				{
+					temp->move( multiplier );
+					//if we moved too far don't use temp, move player by needed distance, also set mult to 0 since a collision happened
+					if( collision::areColliding( *temp, *nearby ) )
+					{
+						player->moveX( wallDistance );
+						multiplier = 0.0f;
+					}
+					else
+						player = temp;
+				}
 			}
 		}
 	}
@@ -521,6 +562,7 @@ void idleFunction(void)
 		}
 		if (keyMap.find('a')->second == true)
 		{
+			facingRight = false;
 			//logic for ramping up move speed
 			if( multiplier >= 0 )
 				multiplier = -.1;
@@ -531,6 +573,7 @@ void idleFunction(void)
 		}
 		if (keyMap.find('d')->second == true)
 		{
+			facingRight = true;
 			//logic for ramping up move speed
 			if( multiplier <= 0 )
 				multiplier = .1;
@@ -591,10 +634,23 @@ void passiveMouse(int x, int y)
 	mouseY *= aspect;
 }
 
-void drawOutline(int x, int y)
+void updateOutline(int x, int y)
 {
 	passiveMouse( x, y );
 	bDrawOutline = true;
+	mouseX = floor(mouseX * 100.0f)/100.0f;
+	float proximity = fmod( mouseX, .05f );
+	if( abs(proximity) < .025f )
+		mouseX -= proximity;
+	else
+		mouseX += .05f - proximity;
+
+	mouseY = floor(mouseY * 100.0f)/100.0f;
+	proximity = fmod( mouseY, .05f );
+	if( abs(proximity) < .025f )
+		mouseY -= proximity;
+	else
+		mouseY += .05f - proximity;
 	drawWidth = -(clickLoc.x - mouseX);
 	drawCenter.x = clickLoc.x - (clickLoc.x - mouseX)/2;
 
@@ -617,8 +673,23 @@ void mouse(int btn, int state, int x, int y)
 	baseObject::vertex center;
 	if(btn==GLUT_LEFT_BUTTON && state==GLUT_DOWN) 
 	{
+		mouseX = floor(mouseX * 100.0f)/100.0f;
+		float proximity = fmod( mouseX, .05f );
+		if( abs(proximity) < .025f )
+			mouseX -= proximity;
+		else
+			mouseX += .05f - proximity;
+
+		mouseY = floor(mouseY * 100.0f)/100.0f;
+		proximity = fmod( mouseY, .05f );
+		if( abs(proximity) < .025f )
+			mouseY -= proximity;
+		else
+			mouseY += .05f - proximity;
+	
 		clickLoc.x = mouseX;
 		clickLoc.y = mouseY;
+		
 		baseObject *selected = checkSelected( clickLoc );
 		if( selected != NULL )
 			selected->bSelected = !selected->bSelected;
@@ -646,6 +717,8 @@ void mouse(int btn, int state, int x, int y)
 				drawHeight -= distanceToMult;
 			}
 		}
+		drawCenter.x = clickLoc.x + drawWidth/2;
+		drawCenter.y = clickLoc.y + drawHeight/2;
 		//prevent accidental creating
 		if( abs(drawWidth) > .025 && abs(drawHeight) > .025 )
 			groundObjs.push_back( makeRectangle( drawCenter, abs(drawWidth), abs(drawHeight) ) );
@@ -661,6 +734,7 @@ void loadTextures()
 	tSky = loadTexture("../Assets/Textures/sky.jpg");
 	tSkyLower = loadTexture("../Assets/Textures/skyLower.jpg");
 	tPaused = loadTexture("../Assets/Textures/paused.png");
+	tSlide = loadTexture("../Assets/Textures/character/slide/1.png");
 
 	for( int i = 1; i <= 4; ++i )
 	{
@@ -714,7 +788,7 @@ int main(int argc, char** argv)
 	glutSetCursor(GLUT_CURSOR_FULL_CROSSHAIR);
 	glutMouseFunc(mouse);
 	glutPassiveMotionFunc( passiveMouse );
-	glutMotionFunc( drawOutline );
+	glutMotionFunc( updateOutline );
 	glutIdleFunc(idleFunction);
 
 	loadTextures();

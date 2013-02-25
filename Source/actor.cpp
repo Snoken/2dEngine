@@ -17,3 +17,12 @@ void actor::moveX( float distance )
 		itr->x += difX;
 	updateMaxMin();
 }
+
+void actor::moveY( float distance )
+{
+	GLfloat difY = distance;
+	this->origin.y += difY;
+	for( list<vertex>::iterator itr = points.begin(); itr != points.end(); ++itr )
+		itr->y += difY;
+	updateMaxMin();
+}
