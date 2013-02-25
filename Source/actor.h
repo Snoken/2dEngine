@@ -13,7 +13,7 @@ public:
 	void init()
 	{
 		walkSpeed = 0.2f;
-		runSpeed = 0.5f;
+		runSpeed = 0.3f;
 		jumpSpeed = 3.0f;
 		vertSpeed = 0.0f;
 		bOnGround = false;
@@ -29,9 +29,14 @@ public:
 	}
 
 	actor(const baseObject& base):baseObject(base){ init(); }
-	actor(const actor& old):baseObject(old){ *this = old; }
+	actor(const actor& old):baseObject(old)
+	{ 
+		*this = old;
+		bOnGround = old.bOnGround;
+	}
 
 	void move( double multiplier );
+	void moveX( float distance );
 	void jump()
 	{
 		bOnGround = false;

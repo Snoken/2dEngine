@@ -25,6 +25,8 @@ void physics::applyGravity( actor *curr, double elapsed )
 
 float physics::travelTime( float d, float v, float a )
 {
+	if( a == 0.0f )
+		return d/v;
 	//Note: this assumes constant acceleration
 	float vf = sqrt( pow( v, 2.0f ) + 2*abs(a)*d );
 	//returns time in seconds

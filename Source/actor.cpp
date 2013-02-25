@@ -8,3 +8,12 @@ void actor::move( double multiplier )
 		itr->x += difX;
 	updateMaxMin();
 }
+
+void actor::moveX( float distance )
+{
+	GLfloat difX = distance;
+	this->origin.x += difX;
+	for( list<vertex>::iterator itr = points.begin(); itr != points.end(); ++itr )
+		itr->x += difX;
+	updateMaxMin();
+}

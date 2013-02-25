@@ -15,7 +15,9 @@ public:
 	};
 	list<vertex> points;
 	GLfloat color[4];
-	GLfloat xMax, yMax, xMin, yMin;
+	GLfloat xMax, yMax, xMin, yMin, width, height;
+	GLuint texture;
+	bool bSelected;
 
 	void updateMaxMin()
 	{
@@ -32,18 +34,40 @@ public:
 		}
 	}
 
+	void init()
+	{
+		updateMaxMin();
+		width = xMax - xMin;
+		height = yMax - yMin;
+		texture = 0;
+		bSelected = false;
+		for( int i = 0; i < 4; ++i )
+			color[i] = 1.0f;
+	}
 	baseObject( vertex origin, list<vertex> points ):
 		origin(origin), points(points)
 	{
-		updateMaxMin();
-		for( int i = 0; i < 4; ++i )
-			color[i] = 1.0f;
+		init();
 	}
 	baseObject( vertex origin, list<vertex> points, GLfloat color[4] )
 	{
 		*this = baseObject( origin, points );
 		for( int i = 0; i < 4; ++i )
 			this->color[i] = color[i];
+	}
+	baseObject( vertex origin, list<vertex> points, GLuint texture )
+	{
+		*this = baseObject( origin, points );
+		this->texture = texture;
+	}
+	baseObject( vertex origin, float width, float height, GLuint texture = 0 )
+	{
+		points.push_back(vertex(origin.x - width/2, origin.y - height/2));
+		points.push_back(vertex(origin.x - width/2, origin.y + height/2));
+		points.push_back(vertex(origin.x + width/2, origin.y + height/2));
+		points.push_back(vertex(origin.x + width/2, origin.y - height/2));
+		init();
+		this->texture = texture;
 	}
 
 	vertex origin;
