@@ -22,11 +22,13 @@ list<prop> foregroundObjs;
 list<ground> groundObjs;
 list<baseObject::vertex> vertices;
 map<int, bool> keyMap;
+ground *slidingOn = NULL;
 
 //global vars
 int width(1600), height(900);
 actor *player = NULL;
-float aspect, trans = 0.0f, timeToImpact = 0.0f, mouseX, mouseY, drawWidth = 0.0f, drawHeight = 0.0f;
+float aspect, trans = 0.0f, timeToImpact = 0.0f, mouseX, 
+	mouseY, drawWidth = 0.0f, drawHeight = 0.0f, fallStart = 999.99f, fallEnd;
 long double elapsed, prevElapsed;
 double multiplier, frame = 0;
 GLuint tSky, tSkyLower, tDirt, tPaused, tSlide;
@@ -105,8 +107,6 @@ baseObject makeRectangle( baseObject::vertex origin, float width, float height, 
 void makeObjects()
 {
 	groundObjs.push_back( baseObject( baseObject::vertex( 0.0f, -0.95f ), 200.0f, .1f, tDirt ) );
-	groundObjs.push_back( baseObject( baseObject::vertex( 0.5f, -0.7f ), 0.5f, .075f, tWalls[rand() % 5] ) );
-	groundObjs.push_back( baseObject( baseObject::vertex( 0.75f, -0.55f ), .5f, .075f, tWalls[rand() % 5] ) );
 	groundObjs.push_back( baseObject( baseObject::vertex( 1.625f, -.775f ), .25f, .25f, tWalls[rand() % 5] ) );
 }
 
@@ -186,6 +186,32 @@ void drawPlayer()
 	}
 	glEnd();
 	glDisable( GL_TEXTURE_2D );
+
+	//draw health bar
+	float width = ((player->xMax - .01f) - (player->xMin + .01f))*player->health/100.0f;
+
+	glBegin( GL_QUADS );
+	glColor4f(1.0f, 0.0f,0.0f,1.0f);
+	glVertex2f( player->xMin + .01f, player->yMax +.01f );
+	glVertex2f( player->xMin + .01f, player->yMax + .02f );
+	glVertex2f( player->xMin + .01f + width, player->yMax +.02f );
+	glVertex2f( player->xMin + .01f + width, player->yMax + .01f );
+	glEnd();
+
+	glBegin( GL_LINES );
+	glColor4f(0.0f, 0.0f,0.0f,1.0f);
+	glVertex2f( player->xMin + .01f, player->yMax +.01f );
+	glVertex2f( player->xMin + .01f, player->yMax + .02f );
+
+	glVertex2f( player->xMin + .01f, player->yMax + .02f );
+	glVertex2f( player->xMax - .01f, player->yMax +.02f );
+
+	glVertex2f( player->xMax - .01f, player->yMax +.02f );
+	glVertex2f( player->xMax - .01f, player->yMax + .01f );
+
+	glVertex2f( player->xMax - .01f, player->yMax + .01f );
+	glVertex2f( player->xMin + .01f, player->yMax +.01f );
+	glEnd();
 }
 
 void drawGrid()
@@ -278,22 +304,29 @@ void redraw()
 	drawSky();
 
 	//draw background objects
-	glEnable( GL_TEXTURE_2D );
 	for( list<baseObject>::iterator objItr = backgroundObjs.begin(); objItr != backgroundObjs.end(); ++objItr )
 	{
+		glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+		glEnable( GL_TEXTURE_2D );
 		glBegin(GL_POLYGON);
 		glBindTexture( GL_TEXTURE_2D, objItr->texture );
-		if( objItr->bSelected )
-			glColor4f(1.0f, 1.0f, 1.0f, 0.5f);
-		else
-			glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 		glTexCoord2f(0.0f,0.0f); glVertex2f(objItr->xMin,objItr->xMin);
 		glTexCoord2f(0.0f,1.0f); glVertex2f(objItr->xMin,objItr->yMax);
 		glTexCoord2f(1.0f,1.0f); glVertex2f(objItr->xMax,objItr->xMax);
 		glTexCoord2f(1.0f,0.0f); glVertex2f(objItr->xMin,objItr->xMin);
 		glEnd();
+		glDisable( GL_TEXTURE_2D );
+
+		if( objItr->bSelected )
+		{
+			glBegin(GL_POLYGON);
+			glColor4f(1.0f, 0.0f, 0.0f, 0.5f);
+			glVertex2f(objItr->xMin,objItr->xMin);
+			glVertex2f(objItr->xMin,objItr->yMax);
+			glVertex2f(objItr->xMax,objItr->xMax);
+			glVertex2f(objItr->xMin,objItr->xMin);
+		}
 	}
-	glDisable( GL_TEXTURE_2D );
 
 	drawGrid();
 
@@ -303,10 +336,7 @@ void redraw()
 		glEnable( GL_TEXTURE_2D );
 		glBindTexture( GL_TEXTURE_2D, objItr->texture );
 		glBegin(GL_POLYGON);
-		if( objItr->bSelected )
-			glColor4f(1.0f, 1.0f, 1.0f, 0.5f);
-		else
-			glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+		glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 		if( objItr->width > objItr->height )
 		{
 			glTexCoord2f(0.0f,0.0f); glVertex2f(objItr->xMin,objItr->yMin);
@@ -323,6 +353,17 @@ void redraw()
 		}
 		glEnd();
 		glDisable( GL_TEXTURE_2D );
+
+		if( objItr->bSelected )
+		{
+			glBegin(GL_POLYGON);
+			glColor4f(1.0f, 0.0f, 0.0f, 0.25f);
+			glVertex2f(objItr->xMin,objItr->yMin);
+			glVertex2f(objItr->xMin,objItr->yMax);
+			glVertex2f(objItr->xMax,objItr->yMax);
+			glVertex2f(objItr->xMax,objItr->yMin);
+			glEnd();
+		}
 	}
 
 	drawPlayer();
@@ -392,50 +433,32 @@ bool facing( actor one, baseObject two, bool right )
 
 ground *getCurrentGround()
 {
-	//map to store max height for each ground object, keyed by height for auto-sort on maxheight
-	map<float, ground*, greater<float>> distances; 
-
-	//build map
+	float lowestDif = 999.99f;
+	ground *belowPlayer = NULL;
 	for( list<ground>::iterator itr = groundObjs.begin(); itr != groundObjs.end(); ++itr )
-		distances.insert( make_pair( itr->yMax, &(*itr) ) );
-
-	//if the player is not above the closest object, remove it
-	while( !collision::above( *player, *(distances.begin()->second) ) )
 	{
-		distances.erase(distances.begin());
-		//return NULL pointer if the map is now empty
-		if( distances.empty() )
-			return NULL;
+		if( collision::above( *player, *itr ) && player->yMin - itr->yMax < lowestDif )
+		{
+			lowestDif = player->yMin - itr->yMax;
+			belowPlayer = &(*itr);
+		}
 	}
-	//return pointer to closest ground object which player is above
-	if( !distances.empty() )
-		return distances.begin()->second;
-	else
-		return NULL;
+	return belowPlayer;
 }
 
-ground *checkForWall( const float & maxDistance, float & wallDistance )
+void getNearbyWalls( const float & maxDistance, list<ground> &nearby )
 {
-	ground *closest = NULL;
-	float lowestDist = 9999999.9f;
 	for( list<ground>::iterator itr = groundObjs.begin(); itr != groundObjs.end(); ++itr )
 	{
 		float gapSize = 0.0f;
-		if( facingRight )
+		if( itr->xMin > player->xMax )
 			gapSize = itr->xMin - player->xMax;
 		else
 			gapSize = player->xMin - itr->xMax;
 
-		//the negative value is to add a bit of tolerance so the player doesn't run through walls
-		if( gapSize > -player->getRunSpeed()/10 && gapSize < lowestDist && gapSize < maxDistance && 
-			collision::nextTo( *player, *itr ) && !collision::above( *player, *itr ) )
-		{
-			lowestDist = gapSize;
-			closest = &(*itr);
-		}
+		if( gapSize < maxDistance && collision::nextTo( *player, *itr ) && !collision::above( *player, *itr ) )
+				nearby.push_back( *itr );
 	}
-	wallDistance = lowestDist;
-	return closest;
 }
 
 //handle motion of player
@@ -446,35 +469,47 @@ void updatePlayerLocation( const long double & elapsed )
 		//figure out which ground object the player is currently above
 		actor *temp;
 		ground *belowPlayer = getCurrentGround();
-		float maxDistance = 1.0f;
-		ground *nearby = NULL;
-		nearby = checkForWall( maxDistance, wallDistance );
+		float maxDistance = 0.5f;
+		list<ground> nearby;
+		
+		getNearbyWalls( maxDistance, nearby );
 
-		if( wallDistance == 0.0f && nearby != NULL )
-			player->bOnWall = true;
-		else if( wallDistance < .015 && player->vertSpeed < 0.0f )
+		if( player->bOnWall && slidingOn->yMin >= player->yMin )
 		{
-			if( multiplier < 0.0f )
-				player->moveX( -(player->xMin - nearby->xMax) );
-			else
-				player->moveX( abs(nearby->xMin - player->xMax) );
-			multiplier = 0.0f;
-			player->bOnWall = true;
-			facingRight = !facingRight;
-			cout << "on wall: " << elapsed << endl;
-		}
-		else
-		{
-			if(player->bOnWall == true)
-				cout << "off wall: " << elapsed << endl;
 			player->bOnWall = false;
+			slidingOn = NULL;
 		}
 
-		//if no valid ground is found or player is no longer above current,
-		//	let player fall
-		if( belowPlayer == NULL )
-			cout << "hi" << endl;
-		if( player->yMin > belowPlayer->yMax)
+		if( slidingOn != NULL )
+		{
+			if( !player->bOnWall )
+				facingRight = !facingRight;
+			player->bOnWall = true;
+			fallStart = player->origin.y;
+		}
+
+		if( player->bOnWall && (keyMap.find('w'))->second == true )
+		{
+			facingRight ? multiplier = 1.0f: multiplier = -1.0f;
+			player->bOnWall = false;
+			player->vertSpeed = 3.0f;
+			slidingOn = NULL;
+		}
+		else if( player->bOnWall && (keyMap.find('d'))->second == true && facingRight )
+		{
+			player->bOnWall = false;
+			slidingOn = NULL;
+		}
+		else if( player->bOnWall && (keyMap.find('a'))->second == true && !facingRight )
+		{
+			player->bOnWall = false;
+			slidingOn = NULL;
+		}
+
+		if( player->vertSpeed < 0.0f && fallStart == 999.99f )
+			fallStart = player->origin.y;
+
+		if( player->yMin - belowPlayer->yMax > .005 )
 			player->bOnGround = false;
 
 		//if the player is currently in the air, apply gravity
@@ -496,37 +531,61 @@ void updatePlayerLocation( const long double & elapsed )
 			else
 			{
 				physics::moveByTimeY( player, timeToImpact );
+				fallEnd = player->origin.y;
+				player->takeFallDamage( fallStart-fallEnd );
+				fallStart = 999.99f;
+
 			}
 		}
 
-		if( multiplier != 0.0f && wallDistance != 0.0f )
+		if( multiplier != 0.0f && !player->bOnWall )
 		{
-			if( !player->bOnWall )
+			//check if there is a wall within 1.0f
+			if( nearby.empty() )
+			{
+				player->move( multiplier );
+			}
+			//try moving
+			else
 			{
 				temp = new actor(*player);
-				//check if there is a wall within 1.0f
-				if( nearby != NULL )
+				bool moved = false;
+				temp->move( multiplier );
+				for( list<ground>::iterator itr = nearby.begin(); itr != nearby.end(); ++itr )
 				{
-					nearby->color[1] = 0.0f;
-					nearby->color[2] = 0.0f;
-				}
-				if( nearby == NULL )
-				{
-					player->move( multiplier );
-				}
-				//try moving
-				else if( wallDistance > .01 )
-				{
-					temp->move( multiplier );
-					//if we moved too far don't use temp, move player by needed distance, also set mult to 0 since a collision happened
-					if( collision::areColliding( *temp, *nearby ) )
+					if( player->xMin == itr->xMax )
 					{
-						player->moveX( wallDistance );
-						multiplier = 0.0f;
+						if( multiplier < 0)
+						{
+							multiplier = 0.0f;
+							moved = true;
+							break;
+						}
 					}
-					else
-						player = temp;
+					else if( player->xMax == itr->xMin )
+					{
+						if( multiplier > 0)
+						{
+							multiplier = 0.0f;
+							moved = true;
+							break;
+						}
+					}
+					if( collision::areColliding( *temp, *itr ) && !itr->bIsPlatform )
+					{
+						if( !player->bOnGround )
+							slidingOn = &(*itr);
+						if(player->xMin > itr->xMax) 
+							player->moveX( -(player->xMin - itr->xMax) );
+						else
+							player->moveX( itr->xMin - player->xMax );
+						multiplier = 0.0f;
+						moved = true;
+						break;
+					}
 				}
+				if( !moved )
+					player = temp;
 			}
 		}
 	}
@@ -552,35 +611,62 @@ void idleFunction(void)
 		if (keyMap.find('a')->second == false && keyMap.find('d')->second == false && multiplier != 0)
 		{
 			//decay the multiplier if no keys are being pressed
-			if( multiplier < .05 && multiplier > -.05 )
+			if( player->bOnGround )
 			{
-				frame = 0;
-				multiplier = 0;
+				if( multiplier < .05 && multiplier > -.05 )
+				{
+					frame = 0;
+					multiplier = 0;
+				}
+				else
+					multiplier /= 1.2;
 			}
-			else
-				multiplier /= 1.2;
 		}
 		if (keyMap.find('a')->second == true)
 		{
-			facingRight = false;
-			//logic for ramping up move speed
-			if( multiplier >= 0 )
-				multiplier = -.1;
-			else if( multiplier > -1.0 )
-				multiplier *= 1.2;
-			else
-				multiplier = -1.0;
+			//only do if player is not on wall and not facing right
+			if( !(player->bOnWall && facingRight) )
+			{
+				facingRight = false;
+				//logic for ramping up move speed
+				if( multiplier >= 0 )
+				{
+					if( player->bOnGround )
+						multiplier = -.1;
+					else
+						multiplier -= .1;
+				}
+				else if( multiplier > -1.0 )
+				{
+					if( multiplier > -.1 )
+						multiplier = -.1;
+					multiplier *= 1.2;
+				}
+				else
+					multiplier = -1.0;
+			}
 		}
-		if (keyMap.find('d')->second == true)
+		else if (keyMap.find('d')->second == true)
 		{
-			facingRight = true;
-			//logic for ramping up move speed
-			if( multiplier <= 0 )
-				multiplier = .1;
-			else if( multiplier < 1.0 )
-				multiplier *= 1.2;
-			else
-				multiplier = 1.0;
+			//only do if player is not on wall and not facing left
+			if( !(player->bOnWall && !facingRight) )
+			{
+				facingRight = true;
+				//logic for ramping up move speed
+				if( multiplier <= 0 )
+					if( player->bOnGround )
+						multiplier = .1;
+					else
+						multiplier += .1;
+				else if( multiplier < 1.0 )
+				{
+					if( multiplier < .1 )
+						multiplier = .1;
+					multiplier *= 1.2;
+				}
+				else
+					multiplier = 1.0;
+			}
 		}
 		if (keyMap.find('w')->second == true || keyMap.find(SPACEBAR)->second == true)
 		{
@@ -615,7 +701,7 @@ void idleFunction(void)
 void initPlayer()
 {
 	//square orig
-	player = new actor(makeRectangle( baseObject::vertex( 0.0f, 0.0f ), .2f*(2.0f/3.0f), .2f));
+	player = new actor(makeRectangle( baseObject::vertex( 0.0f, 0.0f ), .2f*(2.0f/3.0f), .195f));
 }
 
 void passiveMouse(int x, int y)
@@ -643,14 +729,14 @@ void updateOutline(int x, int y)
 	if( abs(proximity) < .025f )
 		mouseX -= proximity;
 	else
-		mouseX += .05f - proximity;
+		mouseX >= 0 ? mouseX += .05f - proximity: mouseX += -.05f - proximity;
 
 	mouseY = floor(mouseY * 100.0f)/100.0f;
 	proximity = fmod( mouseY, .05f );
 	if( abs(proximity) < .025f )
 		mouseY -= proximity;
 	else
-		mouseY += .05f - proximity;
+		mouseY >= 0 ? mouseY += .05f - proximity: mouseY += -.05f - proximity;
 	drawWidth = -(clickLoc.x - mouseX);
 	drawCenter.x = clickLoc.x - (clickLoc.x - mouseX)/2;
 
@@ -658,7 +744,7 @@ void updateOutline(int x, int y)
 	drawCenter.y = clickLoc.y - (clickLoc.y - mouseY)/2;
 }
 
-baseObject *checkSelected( baseObject::vertex loc )
+ground *checkSelected( baseObject::vertex loc )
 {
 	for( list<ground>::iterator objItr = groundObjs.begin(); objItr != groundObjs.end(); ++objItr )
 	{
@@ -671,57 +757,47 @@ baseObject *checkSelected( baseObject::vertex loc )
 void mouse(int btn, int state, int x, int y)
 {
 	baseObject::vertex center;
+	passiveMouse(x, y);
 	if(btn==GLUT_LEFT_BUTTON && state==GLUT_DOWN) 
 	{
+		clickLoc.x = mouseX;
+		clickLoc.y = mouseY;
+		ground *selected = checkSelected( clickLoc );
+		if( selected != NULL )
+		{
+			selected->bSelected = !selected->bSelected;
+			selected->bIsPlatform = !selected->bIsPlatform;
+		}
+
 		mouseX = floor(mouseX * 100.0f)/100.0f;
 		float proximity = fmod( mouseX, .05f );
 		if( abs(proximity) < .025f )
 			mouseX -= proximity;
 		else
-			mouseX += .05f - proximity;
+			mouseX >= 0 ? mouseX += .05f - proximity: mouseX += -.05f - proximity;
 
 		mouseY = floor(mouseY * 100.0f)/100.0f;
 		proximity = fmod( mouseY, .05f );
 		if( abs(proximity) < .025f )
 			mouseY -= proximity;
 		else
-			mouseY += .05f - proximity;
+			mouseY >= 0 ? mouseY += .05f - proximity: mouseY += -.05f - proximity;
 	
 		clickLoc.x = mouseX;
 		clickLoc.y = mouseY;
-		
-		baseObject *selected = checkSelected( clickLoc );
-		if( selected != NULL )
-			selected->bSelected = !selected->bSelected;
 	}
 	if(btn==GLUT_LEFT_BUTTON && state==GLUT_UP) 
 	{
 		bDrawOutline = false;
-		float distanceToMult;
 
-		if( abs(drawWidth) > abs(drawHeight) )
-		{
-			//if the width isn't a multiple of the height
-			if( fmod(drawWidth/drawHeight, 1.0f) != 0.0f )
-			{
-				distanceToMult = fmod( drawWidth, drawHeight );
-				drawWidth -= distanceToMult;
-			}
-		}
-		else
-		{
-			//if the height isn't a multiple of the width
-			if( fmod(drawHeight/drawWidth, 1.0f) != 0.0f )
-			{
-				distanceToMult = fmod( drawHeight, drawWidth );
-				drawHeight -= distanceToMult;
-			}
-		}
 		drawCenter.x = clickLoc.x + drawWidth/2;
 		drawCenter.y = clickLoc.y + drawHeight/2;
 		//prevent accidental creating
 		if( abs(drawWidth) > .025 && abs(drawHeight) > .025 )
+		{
 			groundObjs.push_back( makeRectangle( drawCenter, abs(drawWidth), abs(drawHeight) ) );
+			drawWidth = drawHeight = 0.0f;
+		}
 	}
 }
 

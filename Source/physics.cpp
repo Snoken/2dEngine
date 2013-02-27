@@ -51,9 +51,6 @@ void physics::moveByTimeY( actor *curr, float time )
 		itr->y += curr->vertSpeed * (float)time;
 	}
 	curr->updateMaxMin();
-	if( curr->vertSpeed <= 0 )
-	{
-		curr->bOnGround = true;
-		curr->vertSpeed = 0.0f;
-	}
+	curr->bOnGround = true;
+	curr->vertSpeed = 0.0f;
 }

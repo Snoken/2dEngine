@@ -19,6 +19,8 @@ namespace collision
 
 	bool above( actor one, baseObject two );
 
+	bool below( actor one, baseObject two );
+
 	bool nextTo( actor one, baseObject two );
 }
 #endif
