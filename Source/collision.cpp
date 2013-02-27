@@ -76,6 +76,11 @@ bool collision::above( actor one, baseObject two )
 	return false;
 }
 
+bool collision::below( actor one, baseObject two )
+{
+	return one.yMax < two.yMin;
+}
+
 bool collision::nextTo( actor one, baseObject two )
 {
 	//return true if any point in one is between two max and min height 
