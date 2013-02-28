@@ -1,8 +1,6 @@
 #ifndef GROUND_H
 #define GROUND_H
 
-#include "actor.h"
-
 class ground : public baseObject
 {
 public:

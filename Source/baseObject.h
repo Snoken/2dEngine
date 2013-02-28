@@ -49,18 +49,28 @@ public:
 	{
 		init();
 	}
-	baseObject( vertex origin, list<vertex> points, GLfloat color[4] )
+	baseObject( vertex origin, list<vertex> points, GLfloat color[4] ): origin(origin)
 	{
 		*this = baseObject( origin, points );
 		for( int i = 0; i < 4; ++i )
 			this->color[i] = color[i];
 	}
-	baseObject( vertex origin, list<vertex> points, GLuint texture )
+	baseObject( vertex origin, float width, float height, GLfloat color[4] ): origin(origin)
+	{
+		points.push_back(vertex(origin.x - width/2, origin.y - height/2));
+		points.push_back(vertex(origin.x - width/2, origin.y + height/2));
+		points.push_back(vertex(origin.x + width/2, origin.y + height/2));
+		points.push_back(vertex(origin.x + width/2, origin.y - height/2));
+		init();
+		for( int i = 0; i < 4; ++i )
+			this->color[i] = color[i];
+	}
+	baseObject( vertex origin, list<vertex> points, GLuint texture ): origin(origin)
 	{
 		*this = baseObject( origin, points );
 		this->texture = texture;
 	}
-	baseObject( vertex origin, float width, float height, GLuint texture = 0 )
+	baseObject( vertex origin, float width, float height, GLuint texture = 0 ): origin(origin)
 	{
 		points.push_back(vertex(origin.x - width/2, origin.y - height/2));
 		points.push_back(vertex(origin.x - width/2, origin.y + height/2));

@@ -39,6 +39,10 @@ public:
 		*this = old;
 		bOnGround = old.bOnGround;
 	}
+	actor( vertex origin, float width, float height, GLuint texture = 0 ):baseObject(origin, width, height, texture)
+	{
+		init();
+	}
 
 	void move( double multiplier );
 	void moveX( float distance );

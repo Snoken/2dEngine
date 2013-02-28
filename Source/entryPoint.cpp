@@ -1,5 +1,6 @@
 #define _CRT_SECURE_NO_DEPRECATE
 #include "soil\SOIL.h"
+#include <Windows.h>
 
 #include <string>
 #include <map>
@@ -9,10 +10,11 @@
 #include <time.h>
 
 #include "actor.h"
+#include "ground.h"
 #include "prop.h"
 #include "physics.h"
 #include "collision.h"
-#include "ground.h"
+#include "levelReadWrite.h"
 
 using namespace std;
 
@@ -21,23 +23,24 @@ list<baseObject> backgroundObjs;
 list<prop> foregroundObjs;
 list<ground> groundObjs;
 list<baseObject::vertex> vertices;
+list<baseObject> menuItems;
 map<int, bool> keyMap;
 ground *slidingOn = NULL;
 
 //global vars
 int width(1600), height(900);
 actor *player = NULL;
-float aspect, trans = 0.0f, timeToImpact = 0.0f, mouseX, 
+float aspect = (float)width/height, trans = 0.0f, timeToImpact = 0.0f, mouseX, 
 	mouseY, drawWidth = 0.0f, drawHeight = 0.0f, fallStart = 999.99f, fallEnd;
 long double elapsed, prevElapsed;
 double multiplier, frame = 0;
-GLuint tSky, tSkyLower, tDirt, tPaused, tSlide;
+GLuint tSky, tSkyLower, tDirt, tPaused, tSave, tLoad, tSlide;
 GLuint tCharStand[4];
 GLuint tCharRun[8];
 GLuint tCharJump[5];
 GLuint tWalls[5];
-float wallDistance = 9999.0f;
-bool drawMenu, bDrawOutline, facingRight;
+float wallDistance = 0.0f;
+bool bDrawMenu, bDrawOutline, facingRight;
 baseObject::vertex clickLoc, drawCenter;
 
 #define SPACEBAR 32
@@ -53,6 +56,34 @@ GLuint loadTexture( const char * filename )
 		SOIL_CREATE_NEW_ID,
 		SOIL_FLAG_MIPMAPS | SOIL_FLAG_INVERT_Y | SOIL_FLAG_NTSC_SAFE_RGB | SOIL_FLAG_COMPRESS_TO_DXT | SOIL_FLAG_TEXTURE_REPEATS
 		);
+}
+
+void getFileWin( OPENFILENAME & ofn )
+{
+	char szFile[260];       // buffer for file name
+    HWND hwnd = NULL;              // owner window
+ 
+    // Initialize OPENFILENAME
+    ZeroMemory(&ofn, sizeof(ofn));
+    ofn.lStructSize = sizeof(ofn);
+    ofn.hwndOwner = hwnd;
+    ofn.lpstrFile = szFile;
+    //
+    // Set lpstrFile[0] to '\0' so that GetOpenFileName does not 
+    // use the contents of szFile to initialize itself.
+    //
+    ofn.lpstrFile[0] = '\0';
+    ofn.nMaxFile = sizeof(szFile);
+    ofn.lpstrFilter = "Level Files (*.lvl)\0*.lvl\0";
+    ofn.nFilterIndex = 1;
+    ofn.lpstrFileTitle = NULL;
+    ofn.nMaxFileTitle = 0;
+    ofn.lpstrInitialDir = NULL;
+    ofn.Flags = OFN_PATHMUSTEXIST;
+ 
+    // Display the Open dialog box. 
+ 
+	GetOpenFileName(&ofn);
 }
 
 void initKeyMap()
@@ -104,12 +135,55 @@ baseObject makeRectangle( baseObject::vertex origin, float width, float height, 
 	return baseObject(origin, rectVerts, texture);
 }
 
-void makeObjects()
+void initObjects()
 {
-	groundObjs.push_back( baseObject( baseObject::vertex( 0.0f, -0.95f ), 200.0f, .1f, tDirt ) );
-	groundObjs.push_back( baseObject( baseObject::vertex( 1.625f, -.775f ), .25f, .25f, tWalls[rand() % 5] ) );
+	groundObjs.push_back( baseObject( 
+		baseObject::vertex( 0.0f, -0.95f ), 200.0f, .1f, tDirt ) );
+	groundObjs.push_back( baseObject( 
+		baseObject::vertex( 1.625f, -.775f ), .25f, .25f, tWalls[rand() % 5] ) );
 }
 
+void initMenu()
+{
+	//background overlay
+	GLfloat color[4] = { 0.0f, 0.0f, 0.0f, 0.9f };
+	menuItems.push_back( baseObject( 
+		baseObject::vertex( 0.0f, 0.0f ), aspect*2, 2.0f, color ) );
+	menuItems.push_back( baseObject( 
+		baseObject::vertex( (-aspect + 0.1f) + .5f, 0.775f ), 1.0f, .25f, tPaused ) );
+	menuItems.push_back( baseObject( 
+		baseObject::vertex( (-aspect + 0.25f) + .25f, 0.525f ), .5f, .25f, tSave ) );
+	menuItems.push_back( baseObject( 
+		baseObject::vertex( (-aspect + 0.25f) + .25f, 0.325f ), .5f, .25f, tLoad ) );
+}
+
+void drawMenu()
+{
+	list<baseObject>::iterator itr = menuItems.begin();
+	glDisable( GL_TEXTURE_2D );
+	glColor4f(0.0f, 0.0f, 0.0f, 0.9f);
+	glBegin(GL_QUADS);
+	glVertex2f(itr->xMin,itr->yMin);
+	glVertex2f(itr->xMin,itr->yMax);
+	glVertex2f(itr->xMax,itr->yMax);
+	glVertex2f(itr->xMax,itr->yMin);
+	glEnd();
+	++itr;
+
+	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+	glEnable( GL_TEXTURE_2D );
+	for( ; itr!=menuItems.end() ; ++itr )
+	{
+		glBindTexture( GL_TEXTURE_2D, itr->texture );
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glBegin(GL_QUADS);
+		glTexCoord2f(0.0f,0.0f); glVertex2f(itr->xMin,itr->yMin);
+		glTexCoord2f(0.0f,1.0f); glVertex2f(itr->xMin,itr->yMax);
+		glTexCoord2f(1.0f,1.0f); glVertex2f(itr->xMax,itr->yMax);
+		glTexCoord2f(1.0f,0.0f); glVertex2f(itr->xMax,itr->yMin);
+		glEnd();
+	}
+}
 void drawSky()
 {
 	glEnable( GL_TEXTURE_2D );
@@ -334,6 +408,9 @@ void redraw()
 	for( list<ground>::iterator objItr = groundObjs.begin(); objItr != groundObjs.end(); ++objItr )
 	{
 		glEnable( GL_TEXTURE_2D );
+		if( objItr->texture == 0 )
+			objItr->texture = tWalls[rand() % 5];
+
 		glBindTexture( GL_TEXTURE_2D, objItr->texture );
 		glBegin(GL_POLYGON);
 		glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
@@ -380,27 +457,9 @@ void redraw()
 
 	drawOutline();
 	
-	if( drawMenu )
+	if( bDrawMenu )
 	{
-		glDisable( GL_TEXTURE_2D );
-		glColor4f(0.0f, 0.0f, 0.0f, 0.9f);
-		glBegin(GL_QUADS);
-		glVertex2f(-aspect+player->origin.x,-1.0);
-		glVertex2f(-aspect+player->origin.x,1.0);
-		glVertex2f(aspect+player->origin.x,1.0);
-		glVertex2f(aspect+player->origin.x,-1.0);
-		glEnd();
-
-		glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-		glEnable( GL_TEXTURE_2D );
-		glBindTexture( GL_TEXTURE_2D, tPaused );
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glBegin(GL_QUADS);
-		glTexCoord2f(0.0f,0.0f); glVertex2f( (-aspect + 0.1f),0.65f);
-		glTexCoord2f(0.0f,1.0f); glVertex2f( (-aspect + 0.1f),0.9f);
-		glTexCoord2f(1.0f,1.0f); glVertex2f( (-aspect + 0.1f) + 1.0f,0.9f);
-		glTexCoord2f(1.0f,0.0f); glVertex2f( (-aspect + 0.1f) + 1.0f,0.65f);
-		glEnd();
+		drawMenu();
 	}
 
 	glutSwapBuffers();
@@ -464,7 +523,7 @@ void getNearbyWalls( const float & maxDistance, list<ground> &nearby )
 //handle motion of player
 void updatePlayerLocation( const long double & elapsed )
 {
-	if( !drawMenu )
+	if( !bDrawMenu )
 	{
 		//figure out which ground object the player is currently above
 		actor *temp;
@@ -597,7 +656,7 @@ void keyPress(unsigned char key, int x, int y)
 	if (keyMap.find(key) != keyMap.end())
 	{
 		if( key == ESC ) //escape key
-			drawMenu = !drawMenu;
+			bDrawMenu = !bDrawMenu;
 		map<int, bool>::iterator currKey = keyMap.find( key );
 		currKey->second = true;
 	}
@@ -606,7 +665,7 @@ void keyPress(unsigned char key, int x, int y)
 void idleFunction(void)
 {
 	//react based on which keys are pressed
-	if( !drawMenu )
+	if( !bDrawMenu )
 	{
 		if (keyMap.find('a')->second == false && keyMap.find('d')->second == false && multiplier != 0)
 		{
@@ -701,7 +760,7 @@ void idleFunction(void)
 void initPlayer()
 {
 	//square orig
-	player = new actor(makeRectangle( baseObject::vertex( 0.0f, 0.0f ), .2f*(2.0f/3.0f), .195f));
+	player = new actor( actor( baseObject::vertex( 0.0f, 0.0f ), .2f*(2.0f/3.0f), .195f));
 }
 
 void passiveMouse(int x, int y)
@@ -754,6 +813,16 @@ ground *checkSelected( baseObject::vertex loc )
 	return NULL;
 }
 
+baseObject *checkSelectedMenu( baseObject::vertex loc )
+{
+	for( list<baseObject>::iterator objItr = ++(menuItems.begin()); objItr != menuItems.end(); ++objItr )
+	{
+		if( collision::inObject( loc, *objItr ) )
+			return &(*objItr);
+	}
+	return NULL;
+}
+
 void mouse(int btn, int state, int x, int y)
 {
 	baseObject::vertex center;
@@ -762,29 +831,53 @@ void mouse(int btn, int state, int x, int y)
 	{
 		clickLoc.x = mouseX;
 		clickLoc.y = mouseY;
-		ground *selected = checkSelected( clickLoc );
-		if( selected != NULL )
+		if( bDrawMenu )
 		{
-			selected->bSelected = !selected->bSelected;
-			selected->bIsPlatform = !selected->bIsPlatform;
+			baseObject *selected = checkSelectedMenu( clickLoc );
+			if( selected != NULL && selected->texture == tSave )
+			{
+				OPENFILENAME fm;
+				getFileWin( fm );
+				char str[260];
+				strcpy(str, fm.lpstrFile);
+				levelReadWrite::writeLevel( str, backgroundObjs, foregroundObjs, groundObjs );
+			}
+			else if( selected != NULL && selected->texture == tLoad )
+			{
+				OPENFILENAME fm;
+				getFileWin( fm );
+				char str[260];
+				strcpy(str, fm.lpstrFile);
+				string temp = levelReadWrite::readLevel( str, backgroundObjs, foregroundObjs, groundObjs );
+				cout << temp << endl;
+			}
 		}
-
-		mouseX = floor(mouseX * 100.0f)/100.0f;
-		float proximity = fmod( mouseX, .05f );
-		if( abs(proximity) < .025f )
-			mouseX -= proximity;
 		else
-			mouseX >= 0 ? mouseX += .05f - proximity: mouseX += -.05f - proximity;
+		{
+			ground *selected = checkSelected( clickLoc );
+			if( selected != NULL )
+			{
+				selected->bSelected = !selected->bSelected;
+				selected->bIsPlatform = !selected->bIsPlatform;
+			}
 
-		mouseY = floor(mouseY * 100.0f)/100.0f;
-		proximity = fmod( mouseY, .05f );
-		if( abs(proximity) < .025f )
-			mouseY -= proximity;
-		else
-			mouseY >= 0 ? mouseY += .05f - proximity: mouseY += -.05f - proximity;
+			mouseX = floor(mouseX * 100.0f)/100.0f;
+			float proximity = fmod( mouseX, .05f );
+			if( abs(proximity) < .025f )
+				mouseX -= proximity;
+			else
+				mouseX >= 0 ? mouseX += .05f - proximity: mouseX += -.05f - proximity;
+
+			mouseY = floor(mouseY * 100.0f)/100.0f;
+			proximity = fmod( mouseY, .05f );
+			if( abs(proximity) < .025f )
+				mouseY -= proximity;
+			else
+				mouseY >= 0 ? mouseY += .05f - proximity: mouseY += -.05f - proximity;
 	
-		clickLoc.x = mouseX;
-		clickLoc.y = mouseY;
+			clickLoc.x = mouseX;
+			clickLoc.y = mouseY;
+		}
 	}
 	if(btn==GLUT_LEFT_BUTTON && state==GLUT_UP) 
 	{
@@ -811,6 +904,8 @@ void loadTextures()
 	tSkyLower = loadTexture("../Assets/Textures/skyLower.jpg");
 	tPaused = loadTexture("../Assets/Textures/paused.png");
 	tSlide = loadTexture("../Assets/Textures/character/slide/1.png");
+	tLoad = loadTexture("../Assets/Textures/load.png");
+	tSave = loadTexture("../Assets/Textures/save.png");
 
 	for( int i = 1; i <= 4; ++i )
 	{
@@ -871,8 +966,9 @@ int main(int argc, char** argv)
 
 	//initialize needed data
 	initKeyMap();
+	initMenu();
 	initPlayer();	
-	makeObjects();
+	initObjects();
 
 	glutMainLoop();
 	return 0;

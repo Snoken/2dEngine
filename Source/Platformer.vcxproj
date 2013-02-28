@@ -66,6 +66,7 @@
     <ClCompile Include="actor.cpp" />
     <ClCompile Include="collision.cpp" />
     <ClCompile Include="entryPoint.cpp" />
+    <ClCompile Include="levelReadWrite.cpp" />
     <ClCompile Include="physics.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -73,6 +74,7 @@
     <ClInclude Include="baseObject.h" />
     <ClInclude Include="collision.h" />
     <ClInclude Include="ground.h" />
+    <ClInclude Include="levelReadWrite.h" />
     <ClInclude Include="physics.h" />
     <ClInclude Include="prop.h" />
   </ItemGroup>
