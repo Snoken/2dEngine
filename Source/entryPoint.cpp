@@ -82,12 +82,12 @@ void getFileWin( OPENFILENAME & ofn )
     ofn.Flags = OFN_PATHMUSTEXIST;
  
     // Display the Open dialog box. 
- 
 	GetOpenFileName(&ofn);
 }
 
 void initKeyMap()
 {
+	//add all keys to map
 	keyMap.insert( make_pair( 'w', false ));
 	keyMap.insert( make_pair( 'a', false ));
 	keyMap.insert( make_pair( 's', false ));
@@ -96,7 +96,7 @@ void initKeyMap()
 	keyMap.insert( make_pair( SPACEBAR, false )); //escape key
 }
 
-//glut needs this even when it's empty for some reason
+//glut needs this even if it's empty for some reason
 void disp(){}
 
 /* Handler for window re-size event. Called back when the window first appears and
@@ -105,38 +105,28 @@ void reshape(GLsizei newWidth, GLsizei newHeigth) {  // GLsizei for non-negative
 	height = newHeigth;
 	width = newWidth;
 	// Compute aspect ratio of the new window
-	if (height == 0) height = 1;                // To prevent divide by 0
+	if (height == 0) height = 1; // To prevent divide by 0
 	aspect = (GLfloat)width / (GLfloat)height;
 
 	// Set the viewport to cover the new window
 	glViewport(0, 0, width, height);
 
 	// Set the aspect ratio of the clipping area to match the viewport
-	glMatrixMode(GL_MODELVIEW);  // To operate on the Projection matrix
-	glLoadIdentity();             // Reset the projection matrix
-	glTranslatef(trans, 0.0f, 0.0f);
+	glMatrixMode(GL_MODELVIEW); //To operate on the Projection matrix
+	glLoadIdentity(); //Reset the projection matrix
+	glTranslatef(trans, 0.0f, 0.0f); //move camera to player location
 	glPopMatrix();
-	if (width >= height) {
+	if (width >= height)
 		// aspect >= 1, set the height from -1 to 1, with larger width
 		gluOrtho2D(-1.0 * aspect, 1.0 * aspect, -1.0, 1.0);
-	} else {
+	else
 		// aspect < 1, set the width to -1 to 1, with larger height
 		gluOrtho2D(-1.0, 1.0, -1.0 / aspect, 1.0 / aspect);
-	}
-}
-
-baseObject makeRectangle( baseObject::vertex origin, float width, float height, GLuint texture =  tWalls[rand() % 5])
-{
-	list<baseObject::vertex> rectVerts;
-	rectVerts.push_back(baseObject::vertex(origin.x - width/2, origin.y - height/2));
-	rectVerts.push_back(baseObject::vertex(origin.x - width/2, origin.y + height/2));
-	rectVerts.push_back(baseObject::vertex(origin.x + width/2, origin.y + height/2));
-	rectVerts.push_back(baseObject::vertex(origin.x + width/2, origin.y - height/2));
-	return baseObject(origin, rectVerts, texture);
 }
 
 void initObjects()
 {
+	//make basic objects for start
 	groundObjs.push_back( baseObject( 
 		baseObject::vertex( 0.0f, -0.95f ), 200.0f, .1f, tDirt ) );
 	groundObjs.push_back( baseObject( 
@@ -149,10 +139,13 @@ void initMenu()
 	GLfloat color[4] = { 0.0f, 0.0f, 0.0f, 0.9f };
 	menuItems.push_back( baseObject( 
 		baseObject::vertex( 0.0f, 0.0f ), aspect*2, 2.0f, color ) );
+	//pause text
 	menuItems.push_back( baseObject( 
 		baseObject::vertex( (-aspect + 0.1f) + .5f, 0.775f ), 1.0f, .25f, tPaused ) );
+	//save text
 	menuItems.push_back( baseObject( 
 		baseObject::vertex( (-aspect + 0.25f) + .25f, 0.525f ), .5f, .25f, tSave ) );
+	//load text
 	menuItems.push_back( baseObject( 
 		baseObject::vertex( (-aspect + 0.25f) + .25f, 0.325f ), .5f, .25f, tLoad ) );
 }
@@ -162,6 +155,7 @@ void drawMenu()
 	list<baseObject>::iterator itr = menuItems.begin();
 	glDisable( GL_TEXTURE_2D );
 	glColor4f(0.0f, 0.0f, 0.0f, 0.9f);
+	//faded black overlay
 	glBegin(GL_QUADS);
 	glVertex2f(itr->xMin,itr->yMin);
 	glVertex2f(itr->xMin,itr->yMax);
@@ -174,6 +168,7 @@ void drawMenu()
 	glEnable( GL_TEXTURE_2D );
 	for( ; itr!=menuItems.end() ; ++itr )
 	{
+		//draw menu objects
 		glBindTexture( GL_TEXTURE_2D, itr->texture );
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		glBegin(GL_QUADS);
@@ -184,6 +179,7 @@ void drawMenu()
 		glEnd();
 	}
 }
+
 void drawSky()
 {
 	glEnable( GL_TEXTURE_2D );
@@ -216,6 +212,8 @@ void drawPlayer()
 	glEnable( GL_TEXTURE_2D );
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+	//bind appropriate texture to player, increment frame as appropriate based on player state
+	//if player is in air
 	if( !player->bOnGround )
 	{
 		if( player->bOnWall )
@@ -228,6 +226,7 @@ void drawPlayer()
 			glBindTexture( GL_TEXTURE_2D, tCharJump[(int)floor(frame)] );
 		}
 	}
+	//if player isn't moving
 	else if( multiplier == 0 )
 	{
 		frame += .05;
@@ -235,6 +234,7 @@ void drawPlayer()
 			frame = 0;
 		glBindTexture( GL_TEXTURE_2D, tCharStand[(int)floor(frame)] );
 	}
+	//if player is running
 	else
 	{
 		frame += .2;
@@ -244,6 +244,7 @@ void drawPlayer()
 	}
 
 	glBegin(GL_QUADS);
+	//draw textures appropriately based on movement direction
 	if( facingRight )
 	{
 		glTexCoord2f(0.0f,0.0f); glVertex2f(player->origin.x - .1f, player->origin.y - .1f);
@@ -290,6 +291,7 @@ void drawPlayer()
 
 void drawGrid()
 {
+	//draw the grid for guides
 	glBegin(GL_LINES);
 	glColor4f(1.0f, 1.0f, 1.0f, 0.25f);
 	for( float x = 0.0f; x < 100.0f; x += .05f )
@@ -318,66 +320,61 @@ void drawGrid()
 
 void drawOutline()
 {
-	if( bDrawOutline )
+	//only draw if there's an outline to draw
+	if( abs(drawHeight) != 0.0f && abs(drawWidth) != 0.0f )
 	{
-		if( abs(drawHeight) != 0.0f && abs(drawWidth) != 0.0f )
+		glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+		glBegin(GL_LINES);
+
+		glVertex2f( clickLoc.x, clickLoc.y );
+		glVertex2f( clickLoc.x, clickLoc.y + drawHeight );
+
+		glVertex2f( clickLoc.x, clickLoc.y + drawHeight );
+		glVertex2f( clickLoc.x + drawWidth, clickLoc.y + drawHeight );
+
+		glVertex2f( clickLoc.x + drawWidth, clickLoc.y + drawHeight );
+		glVertex2f( clickLoc.x + drawWidth, clickLoc.y );
+
+		glVertex2f( clickLoc.x + drawWidth, clickLoc.y );
+		glVertex2f( clickLoc.x, clickLoc.y );
+
+		//draw subdivision lines
+		if( abs(drawWidth) > abs(drawHeight) )
 		{
-			glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-			glBegin(GL_LINES);
-
-			glVertex2f( clickLoc.x, clickLoc.y );
-			glVertex2f( clickLoc.x, clickLoc.y + drawHeight );
-
-			glVertex2f( clickLoc.x, clickLoc.y + drawHeight );
-			glVertex2f( clickLoc.x + drawWidth, clickLoc.y + drawHeight );
-
-			glVertex2f( clickLoc.x + drawWidth, clickLoc.y + drawHeight );
-			glVertex2f( clickLoc.x + drawWidth, clickLoc.y );
-
-			glVertex2f( clickLoc.x + drawWidth, clickLoc.y );
-			glVertex2f( clickLoc.x, clickLoc.y );
-
-			//draw subdivision lines
-			if( abs(drawWidth) > abs(drawHeight) )
+			float endX = clickLoc.x + drawWidth;
+			float incDist;
+			drawWidth >= 0 ? incDist = abs(drawHeight) : incDist = -abs(drawHeight);
+			while( abs(incDist) <= abs(drawWidth) )
 			{
-				float endX = clickLoc.x + drawWidth;
-				float incDist;
-				drawWidth >= 0 ? incDist = abs(drawHeight) : incDist = -abs(drawHeight);
-				while( abs(incDist) <= abs(drawWidth) )
-				{
-					glVertex2f( clickLoc.x + incDist, clickLoc.y + drawHeight );
-					glVertex2f( clickLoc.x + incDist, clickLoc.y );
-					if( drawWidth >= 0 )
-						incDist += abs(drawHeight);
-					else
-						incDist -= abs(drawHeight);
-				}
+				glVertex2f( clickLoc.x + incDist, clickLoc.y + drawHeight );
+				glVertex2f( clickLoc.x + incDist, clickLoc.y );
+				if( drawWidth >= 0 )
+					incDist += abs(drawHeight);
+				else
+					incDist -= abs(drawHeight);
 			}
-			else
-			{
-				float endY = clickLoc.y + drawHeight;
-				float incDist;
-				drawHeight >= 0 ? incDist = abs(drawWidth) : incDist = -abs(drawWidth);
-				while( abs(incDist) <= abs(drawHeight) )
-				{
-					glVertex2f( clickLoc.x + drawWidth, clickLoc.y + incDist);
-					glVertex2f( clickLoc.x, clickLoc.y + incDist);
-					if( drawHeight >= 0 )
-						incDist += abs(drawWidth);
-					else
-						incDist -= abs(drawWidth);
-				}
-			}
-			glEnd();
 		}
+		else
+		{
+			float endY = clickLoc.y + drawHeight;
+			float incDist;
+			drawHeight >= 0 ? incDist = abs(drawWidth) : incDist = -abs(drawWidth);
+			while( abs(incDist) <= abs(drawHeight) )
+			{
+				glVertex2f( clickLoc.x + drawWidth, clickLoc.y + incDist);
+				glVertex2f( clickLoc.x, clickLoc.y + incDist);
+				if( drawHeight >= 0 )
+					incDist += abs(drawWidth);
+				else
+					incDist -= abs(drawWidth);
+			}
+		}
+		glEnd();
 	}
 }
-void redraw()
-{	
-	glClear(GL_COLOR_BUFFER_BIT);
-	drawSky();
 
-	//draw background objects
+void drawBackground()
+{
 	for( list<baseObject>::iterator objItr = backgroundObjs.begin(); objItr != backgroundObjs.end(); ++objItr )
 	{
 		glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
@@ -401,10 +398,10 @@ void redraw()
 			glVertex2f(objItr->xMin,objItr->xMin);
 		}
 	}
+}
 
-	drawGrid();
-
-	//draw ground
+void drawGround()
+{
 	for( list<ground>::iterator objItr = groundObjs.begin(); objItr != groundObjs.end(); ++objItr )
 	{
 		glEnable( GL_TEXTURE_2D );
@@ -442,10 +439,10 @@ void redraw()
 			glEnd();
 		}
 	}
+}
 
-	drawPlayer();
-
-	//draw foreground objs
+void drawForeground()
+{
 	for( list<prop>::iterator objItr = foregroundObjs.begin(); objItr != foregroundObjs.end(); ++objItr )
 	{
 		glBegin(GL_POLYGON);
@@ -454,13 +451,23 @@ void redraw()
 			glVertex2f(vertItr->x, vertItr->y);
 		glEnd();
 	}
+}
 
-	drawOutline();
-	
+void redraw()
+{
+	glClear(GL_COLOR_BUFFER_BIT);
+
+	//each draw call is essentially a layer, the first call is the furthest back
+	drawSky();
+	drawBackground();
+	drawGrid();
+	drawGround();
+	drawPlayer();
+	drawForeground();
+	if( bDrawOutline )
+		drawOutline();
 	if( bDrawMenu )
-	{
 		drawMenu();
-	}
 
 	glutSwapBuffers();
 }
@@ -483,6 +490,7 @@ float pointDistance( const baseObject::vertex & one, const baseObject::vertex & 
 
 bool facing( actor one, baseObject two, bool right )
 {
+	//check if actor is facing the given object
 	if( two.xMin >= one.xMax && right )
 		return true;
 	else if( two.xMax <= one.xMin && !right )
@@ -490,32 +498,34 @@ bool facing( actor one, baseObject two, bool right )
 	return false;
 }
 
-ground *getCurrentGround()
+ground *getCurrentGround( actor one )
 {
+	//figure out which ground is below given actor
 	float lowestDif = 999.99f;
 	ground *belowPlayer = NULL;
 	for( list<ground>::iterator itr = groundObjs.begin(); itr != groundObjs.end(); ++itr )
 	{
-		if( collision::above( *player, *itr ) && player->yMin - itr->yMax < lowestDif )
+		if( collision::above( one, *itr ) && one.yMin - itr->yMax < lowestDif )
 		{
-			lowestDif = player->yMin - itr->yMax;
+			lowestDif = one.yMin - itr->yMax;
 			belowPlayer = &(*itr);
 		}
 	}
 	return belowPlayer;
 }
 
-void getNearbyWalls( const float & maxDistance, list<ground> &nearby )
+void getNearbyWalls( actor one, const float & maxDistance, list<ground> &nearby )
 {
+	//get list of walls nearest actor
 	for( list<ground>::iterator itr = groundObjs.begin(); itr != groundObjs.end(); ++itr )
 	{
 		float gapSize = 0.0f;
-		if( itr->xMin > player->xMax )
-			gapSize = itr->xMin - player->xMax;
+		if( itr->xMin > one.xMax )
+			gapSize = itr->xMin - one.xMax;
 		else
-			gapSize = player->xMin - itr->xMax;
+			gapSize = one.xMin - itr->xMax;
 
-		if( gapSize < maxDistance && collision::nextTo( *player, *itr ) && !collision::above( *player, *itr ) )
+		if( gapSize < maxDistance && collision::nextTo( one, *itr ) && !collision::above( one, *itr ) )
 				nearby.push_back( *itr );
 	}
 }
@@ -527,11 +537,11 @@ void updatePlayerLocation( const long double & elapsed )
 	{
 		//figure out which ground object the player is currently above
 		actor *temp;
-		ground *belowPlayer = getCurrentGround();
+		ground *belowPlayer = getCurrentGround( *player );
 		float maxDistance = 0.5f;
 		list<ground> nearby;
 		
-		getNearbyWalls( maxDistance, nearby );
+		getNearbyWalls( *player, maxDistance, nearby );
 
 		if( player->bOnWall && slidingOn->yMin >= player->yMin )
 		{
@@ -888,7 +898,7 @@ void mouse(int btn, int state, int x, int y)
 		//prevent accidental creating
 		if( abs(drawWidth) > .025 && abs(drawHeight) > .025 )
 		{
-			groundObjs.push_back( makeRectangle( drawCenter, abs(drawWidth), abs(drawHeight) ) );
+			groundObjs.push_back( baseObject( drawCenter, abs(drawWidth), abs(drawHeight) ) );
 			drawWidth = drawHeight = 0.0f;
 		}
 	}

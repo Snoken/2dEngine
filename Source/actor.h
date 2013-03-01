@@ -1,7 +1,7 @@
 #ifndef ACTOR_H
 #define ACTOR_H
 #include "baseObject.h"
-
+#include "ground.h"
 
 using namespace std;
 class actor : public baseObject
@@ -58,9 +58,11 @@ public:
 			health -= 10.0f;
 	}
 
+	void updateLocation( const long double & elapsed, double multiplier );
 	float getRunSpeed(){ return runSpeed; }
 
 private:
 	float walkSpeed, runSpeed, jumpSpeed, damageDistance;
+	ground *getCurrentGround( list<ground> *groundObjs );
 };
 #endif
