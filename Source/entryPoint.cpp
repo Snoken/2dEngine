@@ -29,7 +29,7 @@ list<baseObject::vertex> vertices;
 list<baseObject> menuItems; //actors so they can be moved
 list<baseObject> overlay;
 map<int, bool> keyMap;
-bool running = false, bSliding = false, bEditing = false;
+bool running = false, bEditing = false;
 //FMod Stuff
 FMOD::System     *fSystem; //handle to FMOD engine
 FMOD::Sound      *soundJump, *soundMusic, *soundRun; //sound that will be loaded and played
@@ -80,13 +80,6 @@ void getFileWin( OPENFILENAME & ofn )
 	// use the contents of szFile to initialize itself.
 	//
 	ofn.lpstrFile[0] = '\0';
-	/*char cCurrentPath[FILENAME_MAX];
-	if (!_getcwd(cCurrentPath, sizeof(cCurrentPath)))
-    {
-		cout << "Error getting cwd" << endl;
-		return;
-    }
-	ofn.lpstrInitialDir = cCurrentPath;*/
 	ofn.nMaxFile = sizeof(szFile);
 	ofn.lpstrFilter = "Level Files (*.lvl)\0*.lvl\0";
 	ofn.nFilterIndex = 1;
@@ -102,13 +95,21 @@ void getFileWin( OPENFILENAME & ofn )
 void initKeyMap()
 {
 	//add all keys to map
+
+	//basic motion
 	keyMap.insert( make_pair( 'w', false ));
+	keyMap.insert( make_pair( SPACEBAR, false ));
 	keyMap.insert( make_pair( 'a', false ));
 	keyMap.insert( make_pair( 's', false ));
 	keyMap.insert( make_pair( 'd', false ));
-	keyMap.insert( make_pair( 'o', false )); //toggle editor
+
+	//drop down through platform
+	keyMap.insert( make_pair( 'q', false ));
+
+	//toggle editor
+	keyMap.insert( make_pair( 'o', false ));
+
 	keyMap.insert( make_pair( ESC, false ));
-	keyMap.insert( make_pair( SPACEBAR, false ));
 	keyMap.insert( make_pair( DEL, false ));
 
 }
@@ -259,7 +260,7 @@ void drawSky()
 	glTexCoord2f(aspect/0.1f,0.0f); glVertex2f(aspect+player->origin.x,-1.0);
 	glEnd();
 
-	//sky gradient: this is no longer used
+	//sky gradient
 	/*glBindTexture( GL_TEXTURE_2D, tSkyLower );
 	glBegin(GL_QUADS);
 	glTexCoord2f(0.0f,0.0f); glVertex2f(-aspect+player->origin.x,-0.9f);
@@ -289,11 +290,23 @@ void drawPlayer()
 	else
 	{
 		if( player->m_state == actor::RUNNING )
+		{
+			if( (unsigned int)floor(player->m_frame) > tCharRun.size() - 1 )
+				player->m_frame = 0;
 			glBindTexture( GL_TEXTURE_2D, tCharRun[(int)floor(player->m_frame)] );
+		}
 		else if( player->m_state == actor::ROLLING )
+		{
+			if( (unsigned int)floor(player->m_frame) > tCharRoll.size() - 1 )
+				player->m_frame = 0;
 			glBindTexture( GL_TEXTURE_2D, tCharRoll[(int)floor(player->m_frame)] );
+		}
 		else if( player->m_state == actor::IDLE )
+		{
+			if( (unsigned int)floor(player->m_frame) > tCharStand.size() - 1 )
+				player->m_frame = 0;
 			glBindTexture( GL_TEXTURE_2D, tCharStand[(int)floor(player->m_frame)] );
+		}
 	}
 
 	glBegin(GL_QUADS);
@@ -307,7 +320,6 @@ void drawPlayer()
 		center.y = player->yMin + h;
 		w*=2; h*=2;
 	}
-	//draw player, direction switches based on m_bIsFacingRight
 	if( player->m_bFacingRight )
 	{
 		glTexCoord2f(0.0f,0.0f); glVertex2f(center.x - h/2, player->yMin -.01f);
@@ -330,7 +342,6 @@ void drawPlayer()
 	if( width < 0.0f )
 		width = 0.0f;
 
-	//draw the red area
 	glBegin( GL_QUADS );
 	glColor4f(1.0f, 0.0f,0.0f,1.0f);
 	glVertex2f( player->xMin + .01f, player->yMax +.01f );
@@ -339,7 +350,6 @@ void drawPlayer()
 	glVertex2f( player->xMin + .01f + width, player->yMax + .01f );
 	glEnd();
 
-	//health bar outline
 	glBegin( GL_LINES );
 	glColor4f(0.0f, 0.0f,0.0f,1.0f);
 	glVertex2f( player->xMin + .01f, player->yMax +.01f );
@@ -358,28 +368,26 @@ void drawPlayer()
 
 void drawGrid()
 {
-	//change this to change size of drawn grid
-	float sqSize = .05f;
 	//draw the grid for guides
 	glBegin(GL_LINES);
 	glColor4f(1.0f, 1.0f, 1.0f, 0.25f);
-	for( float x = 0.0f; x < 100.0f; x += sqSize )
+	for( float x = 0.0f; x < 100.0f; x += .05f )
 	{
 		glVertex2f( x, 1.0f );
 		glVertex2f( x, -1.0f );
 	}
-	for( float x = -0.05f; x > -100.0f; x -= sqSize )
+	for( float x = -0.05f; x > -100.0f; x -= .05f )
 	{
 		glVertex2f( x, 1.0f );
 		glVertex2f( x, -1.0f );
 	}
 
-	for( float y = 0.0f; y < 1; y += sqSize )
+	for( float y = 0.0f; y < 1; y += .05f )
 	{
 		glVertex2f( -100, y );
 		glVertex2f( 100, y );
 	}
-	for( float y = -0.05f; y > -1; y -= sqSize )
+	for( float y = -0.05f; y > -1; y -= .05f )
 	{
 		glVertex2f( -100, y );
 		glVertex2f( 100, y );
@@ -389,10 +397,9 @@ void drawGrid()
 
 void drawOutline()
 {
-	//only draw if there's an outline to draw (user is actively clicking and dragging mouse)
+	//only draw if there's an outline to draw
 	if( abs(drawHeight) != 0.0f && abs(drawWidth) != 0.0f )
 	{
-		//draw the border of the current drawing area
 		glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 		glBegin(GL_LINES);
 
@@ -408,7 +415,7 @@ void drawOutline()
 		glVertex2f( clickLoc.x + drawWidth, clickLoc.y );
 		glVertex2f( clickLoc.x, clickLoc.y );
 
-		//draw subdivision lines, method differs based on whether width or height is greater
+		//draw subdivision lines
 		if( abs(drawWidth) > abs(drawHeight) )
 		{
 			float endX = clickLoc.x + drawWidth;
@@ -445,7 +452,6 @@ void drawOutline()
 
 void drawBackground()
 {
-	//fairly simple function, draws all objects in the background list
 	for( list<baseObject>::iterator objItr = backgroundObjs.begin(); objItr != backgroundObjs.end(); ++objItr )
 	{
 		glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
@@ -459,7 +465,6 @@ void drawBackground()
 		glEnd();
 		glDisable( GL_TEXTURE_2D );
 
-		//shade red if selected
 		if( objItr->bSelected && bEditing )
 		{
 			glBegin(GL_POLYGON);
@@ -474,30 +479,23 @@ void drawBackground()
 
 void drawGround()
 {
-	//fairly simple function, draws all objects in the ground list
 	for( list<ground>::reverse_iterator objItr = groundObjs.rbegin(); objItr != groundObjs.rend(); ++objItr )
 	{
-		//bind appropriate texture
 		glEnable( GL_TEXTURE_2D );
 		if( objItr->texture == 0 )
 			objItr->texture = tWallsStone[rand() % 5];
 
 		glBindTexture( GL_TEXTURE_2D, objItr->texture );
-
-		//rotate texture as needed(need to translate first to rotate about center)
 		glMatrixMode(GL_TEXTURE);
 		glLoadIdentity();
 		glTranslatef(0.5,0.5,0.0);
 		glRotatef(objItr->texRotation,0.0,0.0,1.0);
 		glTranslatef(-0.5,-0.5,0.0);
-
-		//switch back to modelview and draw objects
 		glMatrixMode(GL_MODELVIEW);
 		glBegin(GL_POLYGON);
 		glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 		if( objItr->points.size() == 4 )
 		{
-			//switch draw method based upon width and height
 			if( objItr->width > objItr->height )
 			{
 				glTexCoord2f(0.0f,0.0f); glVertex2f(objItr->xMin,objItr->yMin);
@@ -513,7 +511,6 @@ void drawGround()
 				glTexCoord2f(1.0f,0.0f); glVertex2f(objItr->xMax,objItr->yMin);
 			}
 		}
-		//impl for triangle drawing, not used right now
 		else if( objItr->points.size() == 3 )
 		{
 			list<baseObject::vertex>::iterator itr = objItr->points.begin();
@@ -526,12 +523,10 @@ void drawGround()
 		glEnd();
 		glDisable( GL_TEXTURE_2D );
 
-		//shade red if selected
 		if( objItr->bSelected && bEditing )
 		{
 			glBegin(GL_POLYGON);
 			glColor4f(1.0f, 0.0f, 0.0f, 0.25f);
-			//impl for triangle drawing, not used right now
 			if( objItr->points.size() == 3 )
 			{
 				list<baseObject::vertex>::iterator itr = objItr->points.begin();
@@ -555,7 +550,6 @@ void drawGround()
 
 void drawForeground()
 {
-	//extremely simple function, just draws foreground, no support for textures yet
 	for( list<prop>::iterator objItr = foregroundObjs.begin(); objItr != foregroundObjs.end(); ++objItr )
 	{
 		glBegin(GL_POLYGON);
@@ -568,7 +562,6 @@ void drawForeground()
 
 void drawCursor()
 {
-	//draw a crosshair for cursor
 	glColor4f(1.0f,1.0f,1.0f,1.0f);
 	glBegin(GL_LINES);
 	glVertex2f(mouseX - .025f, mouseY);
@@ -581,27 +574,31 @@ void drawCursor()
 
 void drawOverlay()
 {
-	//draws editing overlay
 	float gap = .015f, sqWidth = .09f, startX = 0, 
 		overWidth = .505f, startY = .395f, offset = player->origin.x;
 	glColor4f(0,0,0,0.9f);
 	glBegin(GL_QUADS);
-	//this is the black background
 	glVertex2f(aspect+offset, 1);
 	glVertex2f(aspect+offset, -1);
 	glVertex2f(aspect-overWidth+offset, -1);
 	glVertex2f(aspect-overWidth+offset, 1);
 
-	//small white line at edge of bar
+	//sidebar
 	glColor4f(1,1,1,1);
 	glVertex2f(aspect-overWidth+offset, 1);
 	glVertex2f(aspect-overWidth+offset, -1);
 	glVertex2f(aspect-overWidth-.005f+offset, -1);
 	glVertex2f(aspect-overWidth-.005f+offset, 1);
+
+	//white backdrop
+	/*glColor4f(1,1,1,1);
+	glVertex2f(aspect-.01f+offset,startY);
+	glVertex2f(aspect-.49f+offset,startY);
+	glVertex2f(aspect-.49f+offset,startY+.48f);
+	glVertex2f(aspect-.01f+offset,startY+.48f);*/
 	glEnd();
 
 	glColor4f(1,1,1,1);
-	//ideally like to add support for more amounts of textures, limited right now
 	string temp = "Textures";
 	glRasterPos2f(aspect-.325f+offset,.925f);
 	glutBitmapString(GLUT_BITMAP_HELVETICA_18, (unsigned char*)temp.c_str());
@@ -614,7 +611,6 @@ void drawOverlay()
 	glRasterPos2f(aspect-.1825f+offset,.885f);
 	glutBitmapString(GLUT_BITMAP_HELVETICA_10, (unsigned char*)temp.c_str());
 
-	//display samples of all textures available
 	glEnable(GL_TEXTURE_2D);
 	startX = aspect-gap;
 	list<baseObject>::iterator itr = overlay.begin();
@@ -629,13 +625,10 @@ void drawOverlay()
 		glEnd();
 	}
 	glDisable(GL_TEXTURE_2D);
-
-	//title for rotation menu
 	temp = "Rotation:";
 	glRasterPos2f(aspect-.485f+offset,.355f);
 	glutBitmapString(GLUT_BITMAP_HELVETICA_12, (unsigned char*)temp.c_str());
 
-	//draw rest of boxes
 	while (itr != overlay.end())
 	{
 		glBegin(GL_QUADS);
@@ -663,7 +656,6 @@ void drawOverlay()
 		++itr;
 	}
 
-	//these need to be drawn after boxes
 	glColor4f(0,0,0,1);
 	temp = "0";
 	glRasterPos2f(aspect-.35f+offset,.355f);
@@ -716,7 +708,6 @@ void redraw()
 
 void tryDelete()
 {
-	//delete object if one is selected (and if it's not the main ground obj)
 	for(list<ground>::iterator itr = groundObjs.begin(); itr != groundObjs.end(); ++itr )
 	{
 		if( itr->bSelected && itr != groundObjs.begin())
@@ -738,11 +729,11 @@ void keyUp(unsigned char key, int x, int y)
 		currKey->second = false;
 }
 
-//find the linear distance between two points, currently unused
-//float pointDistance( const baseObject::vertex & one, const baseObject::vertex & two )
-//{
-//	return sqrt( pow(two.x - one.x, 2) + pow(two.y - one.y, 2) );
-//}
+//find the linear distance between two points
+float pointDistance( const baseObject::vertex & one, const baseObject::vertex & two )
+{
+	return sqrt( pow(two.x - one.x, 2) + pow(two.y - one.y, 2) );
+}
 
 ground *getCurrentGround( actor one )
 {
@@ -751,8 +742,6 @@ ground *getCurrentGround( actor one )
 	ground *belowPlayer = NULL;
 	for( list<ground>::iterator itr = groundObjs.begin(); itr != groundObjs.end(); ++itr )
 	{
-		//this checks that one is above *itr (y-dir only) and that one is at least 
-		//	in part between the max and min of *itr
 		if( collision::above( one, *itr ) && one.yMin - itr->yMax < lowestDif )
 		{
 			lowestDif = one.yMin - itr->yMax;
@@ -769,8 +758,6 @@ ground *getCurrentCeiling( actor one )
 	ground *abovePlayer = NULL;
 	for( list<ground>::iterator itr = groundObjs.begin(); itr != groundObjs.end(); ++itr )
 	{
-		//this checks that one is below *itr (y-dir only) and that one is at least 
-		//	in part between the max and min of *itr
 		if( collision::above( *itr, one ) && itr->yMin - one.yMax < lowestDif )
 		{
 			lowestDif = itr->yMin - one.yMax;
@@ -786,15 +773,12 @@ void getNearbyWalls( actor one, const float & maxDistance, list<ground> &nearby 
 	for( list<ground>::iterator itr = groundObjs.begin(); itr != groundObjs.end(); ++itr )
 	{
 		float gapSize = 0.0f;
-		//determine position of one relative to *itr, set gap distance accordingly
 		if( itr->xMin > one.xMax )
 			gapSize = itr->xMin - one.xMax;
 		else
 			gapSize = one.xMin - itr->xMax;
 
-		//if one is less than the max gap size away from *itr, and next to it, and not above or below it
-		if( gapSize < maxDistance && collision::nextTo( one, *itr ) && !collision::above( one, *itr )
-			&& !collision::below( one, *itr ))
+		if( gapSize < maxDistance && collision::nextTo( one, *itr ) && !collision::above( one, *itr ) )
 			nearby.push_back( *itr );
 	}
 }
@@ -804,17 +788,16 @@ void updatePlayerLocation( const long double & elapsed )
 {
 	if( !bDrawMenu )
 	{
-		//fetch data needed for player move
+		//figure out which ground object the player is currently above
 		ground *belowPlayer = getCurrentGround( *player );
 		ground *abovePlayer = getCurrentCeiling( *player );
 		float maxDistance = 0.5f;
 		list<ground> nearby;
 		getNearbyWalls( *player, maxDistance, nearby );
-		//play running sound if player moving and on ground
 		if( player->getMult() != 0.0 && player->m_bOnGround)
 		{
-			if( runChan == NULL )
-				fSystem->playSound(FMOD_CHANNEL_FREE, soundRun, false, &runChan);
+			//if( runChan == NULL )
+				//fSystem->playSound(FMOD_CHANNEL_FREE, soundRun, false, &runChan);
 		}
 		else
 		{
@@ -822,7 +805,6 @@ void updatePlayerLocation( const long double & elapsed )
 				runChan->stop();
 			runChan = NULL;
 		}
-		//move player, this is the function that actually handles movement
 		player->updateLocation( elapsed, belowPlayer, abovePlayer, &nearby, &keyMap );
 	}
 }
@@ -835,7 +817,6 @@ void keyPress(unsigned char key, int x, int y)
 	//set appropriate key to pressed
 	if (keyMap.find(key) != keyMap.end())
 	{
-		//esc and o are special cases
 		if( key == ESC ) //escape key
 			bDrawMenu = !bDrawMenu;
 		else if( key == 'o' )
@@ -852,32 +833,31 @@ void idleFunction(void)
 	{
 		if( bEditing && keyMap.find(DEL)->second == true )
 			tryDelete();
-		if (keyMap.find('a')->second == false && keyMap.find('d')->second == false)
+		if (keyMap.find('a')->second == false && keyMap.find('d')->second == false && !player->m_bIsRolling )
 			//decay the multiplier if no keys are being pressed
 			player->decayMult();
 		if (keyMap.find('s')->second == true)
 		{
-			//roll is not rolling and on ground
-			if(player->m_bOnGround && !player->m_bIsRolling)
+			if(player->m_bOnGround && !player->m_bIsRolling && player->isMoving() )
 				player->startRoll( elapsed );
 		}
 		else if (keyMap.find('a')->second == true)
 		{
-			if(!bSliding)
+			if(!player->m_bOnWall)
 				player->m_bFacingRight = false;
 			player->updateMult();
 		}
 		else if (keyMap.find('d')->second == true)
 		{
-			if(!bSliding)
+			if(!player->m_bOnWall)
 				player->m_bFacingRight = true;
 			player->updateMult();
 		}
 		if (keyMap.find('w')->second == true || keyMap.find(SPACEBAR)->second == true)
 			if( player->m_bOnGround )
 			{
-				//play jump sound
-				fSystem->playSound(FMOD_CHANNEL_FREE, soundJump, false, 0);
+				//runChan->getChannelGroup(&runChan);
+				//fSystem->playSound(soundJump, 0, false, &runChan);
 				player->jump();
 			}
 	}
@@ -891,7 +871,7 @@ void idleFunction(void)
 	elapsed = glutGet(GLUT_ELAPSED_TIME)/1000.0;
 	updatePlayerLocation( elapsed - prevElapsed );
 
-	//update viewpoint offset to follow player
+	//adjust viewpoint offset to follow player
 	trans = -(player->origin.x);
 	trans /= aspect;
 	reshape(width, height);
@@ -902,13 +882,12 @@ void idleFunction(void)
 
 	//call redrawing of elements
 	redraw();
-	//this needs to be called on a per-frame basis to keep fmod working
 	fSystem->update();
 }
 
 void initPlayer()
 {
-	//create the object for the player
+	//square orig
 	player = new actor( actor( baseObject::vertex( 0.0f, 0.0f ), .2f*(2.0f/3.0f), .195f));
 }
 
@@ -946,7 +925,6 @@ void passiveMouse(int x, int y)
 
 void updateOutline(int x, int y)
 {
-	//updates the coordinates that the outline uses, rounds to the nearest .05
 	if( bEditing )
 	{
 		passiveMouse( x, y );
@@ -974,7 +952,6 @@ void updateOutline(int x, int y)
 
 ground *checkSelected( baseObject::vertex loc )
 {
-	//return the first selected object found (should only be one)
 	for( list<ground>::iterator objItr = groundObjs.begin(); objItr != groundObjs.end(); ++objItr )
 	{
 		if( collision::inObject( loc, *objItr ) )
@@ -1001,7 +978,6 @@ ground *checkSelected( baseObject::vertex loc )
 
 baseObject *checkSelectedMenu( baseObject::vertex loc )
 {
-	//get selected object from menu
 	for( list<baseObject>::iterator objItr = ++(menuItems.begin()); objItr != menuItems.end(); ++objItr )
 	{
 		if( collision::inObject( loc, *objItr ) )
@@ -1012,7 +988,6 @@ baseObject *checkSelectedMenu( baseObject::vertex loc )
 
 baseObject *checkSelectedOverlay( baseObject::vertex loc )
 {
-	//get selected object from overlay
 	for( list<baseObject>::iterator objItr = overlay.begin(); objItr != overlay.end(); ++objItr )
 	{
 		if( collision::inObject( loc, *objItr ) )
@@ -1027,18 +1002,13 @@ void mouse(int btn, int state, int x, int y)
 	passiveMouse(x, y);
 	if(btn==GLUT_LEFT_BUTTON && state==GLUT_DOWN) 
 	{
-		//store click location
 		clickLoc.x = mouseX;
 		clickLoc.y = mouseY;
-		//handle menu clicking
 		if( bDrawMenu )
 		{
-			//need to adjust vertex for menu and overlay objects because mouse
-			//	pos is still relative to the window, not the viewport
 			baseObject::vertex adjusted( clickLoc );
 			adjusted.x -= player->origin.x;
 			baseObject *selected = checkSelectedMenu( adjusted );
-			//hande save and load
 			if( selected != NULL && selected->texture == tSave )
 			{
 				OPENFILENAME fm;
@@ -1061,12 +1031,9 @@ void mouse(int btn, int state, int x, int y)
 			selected = checkSelected( clickLoc );
 			if( bEditing )
 			{
-				//need to adjust vertex for menu and overlay objects because mouse
-				//	pos is still relative to the window, not the viewport
 				baseObject::vertex adjusted( clickLoc );
 				adjusted.x -= player->origin.x;
 				baseObject *overlaySelected = checkSelectedOverlay( adjusted );
-				//if nothing was selected on overlay, check if a ground obj was selected
 				if( overlaySelected != NULL )
 				{
 					for( list<ground>::iterator itr = groundObjs.begin(); itr != groundObjs.end(); ++itr )
@@ -1082,7 +1049,6 @@ void mouse(int btn, int state, int x, int y)
 						}
 					}
 				}
-				//round new position to nearest 0.5
 				mouseX = floor(mouseX * 100.0f)/100.0f;
 				float proximity = fmod( mouseX, .05f );
 				if( abs(proximity) < .025f )
@@ -1215,8 +1181,8 @@ int main(int argc, char** argv)
 	initPlayer();	
 	initObjects();
 	initOverlay();
-	initSounds();
-	fSystem->playSound(FMOD_CHANNEL_FREE, soundMusic, false, 0);
+	//initSounds();
+	//fSystem->playSound(FMOD_CHANNEL_FREE, soundMusic, false, 0);
 
 	glutMainLoop();
 	return 0;

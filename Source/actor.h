@@ -11,7 +11,7 @@ using namespace std;
 class actor : public baseObject
 {
 public:
-	enum ActorState { IDLE, RUNNING, ROLLING, SLIDING };
+	enum ActorState { IDLE, RUNNING, ROLLING, CROUCHING, SLIDING };
 	ActorState m_state;
 	bool m_bOnGround, m_bFacingRight, m_bIsRolling, m_bOnWall;
 	double m_frame;
@@ -82,6 +82,7 @@ public:
 	void updateMult();
 	void airFrameUpdate();
 	ActorState groundFrameUpdate( const long double & elapsed, ground *abovePlayer );
+	bool isMoving() { return m_multiplier != 0; }
 
 private:
 	double m_multiplier, m_lastRollTime;

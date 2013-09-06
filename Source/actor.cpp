@@ -87,7 +87,7 @@ void actor::updateLocation( const long double & elapsed, ground *belowPlayer,
 		m_bOnWall = false;
 	else
 	{
-		if( m_pSlidingOn->yMin > yMin )
+		if( m_pSlidingOn->yMin >= yMin )
 			m_pSlidingOn = NULL;
 		else if( m_bOnWall && (keyMap->find('w'))->second == true )
 		{
@@ -237,7 +237,7 @@ void actor::updateMult()
 		//only do if player is not on wall and not facing right
 		if( !m_bOnWall && !m_bFacingRight )
 		{
-			//logic for ramping up moveByTimeX speed
+			//logic for ramping up move speed
 			if( m_multiplier >= 0 )
 			{
 				if( m_bOnGround )
@@ -288,6 +288,8 @@ actor::ActorState actor::groundFrameUpdate( const long double & elapsed, ground 
 		m_frame += .05;
 		if( m_frame >= 3.95 )
 			m_frame = 0;
+		if( m_bIsRolling )
+			return CROUCHING;
 		return IDLE;
 	}
 	//if player is running

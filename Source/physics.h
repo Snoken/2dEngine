@@ -1,5 +1,3 @@
-//This class is currently empty, will possibly be re-implemented for projectiles
-
 #ifndef PHYSICS_H
 #define PHYSICS_H
 

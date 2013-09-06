@@ -23,9 +23,10 @@ bool collision::intersecting( baseObject::vertex ends1[2], baseObject::vertex en
 
 bool collision::inObject( baseObject::vertex point, baseObject obj )
 {
-	if (point.x < obj.xMin || point.x > obj.xMax || point.y < obj.yMin || point.y > obj.yMax)
-		// Definitely not within the polygon
+	if (point.x < obj.xMin || point.x > obj.xMax || point.y < obj.yMin || point.y > obj.yMax) {
+		// Definitely not within the polygon!
 		return false;
+	}
 
 	//ray casting impl
 
@@ -36,7 +37,7 @@ bool collision::inObject( baseObject::vertex point, baseObject obj )
 	baseObject::vertex rayPoints[2] = {baseObject::vertex(obj.xMin-e, point.y), 
 		baseObject::vertex( point.x, point.y )};
 
-	//start on second vertex so we're sure there's at least two points
+	//start on second object so we're sure there's at least two points
 	for( list<baseObject::vertex>::iterator p2 = ++(obj.points.begin()); p2 != obj.points.end(); ++p2 )
 	{
 		list<baseObject::vertex>::iterator p1 = p2;
@@ -62,7 +63,6 @@ bool collision::areColliding( baseObject one, baseObject two )
 
 bool collision::above( baseObject one, baseObject two )
 {
-	//make sure one is withing x dimensions of two
 	if( !(one.xMax > two.xMin && one.xMin < two.xMax) )
 		return false;
 	if( (one.yMin +.01) >= two.yMax )
@@ -72,9 +72,6 @@ bool collision::above( baseObject one, baseObject two )
 
 bool collision::below( baseObject one, baseObject two )
 {
-	//make sure one is withing x dimensions of two
-	if( !(one.xMax > two.xMin && one.xMin < two.xMax) )
-		return false;
 	return one.yMax < two.yMin;
 }
 
