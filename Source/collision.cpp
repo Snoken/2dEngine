@@ -23,10 +23,9 @@ bool collision::intersecting( baseObject::vertex ends1[2], baseObject::vertex en
 
 bool collision::inObject( baseObject::vertex point, baseObject obj )
 {
-	if (point.x < obj.xMin || point.x > obj.xMax || point.y < obj.yMin || point.y > obj.yMax) {
-		// Definitely not within the polygon!
+	if (point.x < obj.xMin || point.x > obj.xMax || point.y < obj.yMin || point.y > obj.yMax)
+		// Definitely not within the polygon
 		return false;
-	}
 
 	//ray casting impl
 
@@ -37,7 +36,7 @@ bool collision::inObject( baseObject::vertex point, baseObject obj )
 	baseObject::vertex rayPoints[2] = {baseObject::vertex(obj.xMin-e, point.y), 
 		baseObject::vertex( point.x, point.y )};
 
-	//start on second object so we're sure there's at least two points
+	//start on second vertex so we're sure there's at least two points
 	for( list<baseObject::vertex>::iterator p2 = ++(obj.points.begin()); p2 != obj.points.end(); ++p2 )
 	{
 		list<baseObject::vertex>::iterator p1 = p2;
@@ -61,14 +60,9 @@ bool collision::areColliding( baseObject one, baseObject two )
 	return false;
 }
 
-float collision::timeToCollisionY( actor one, baseObject two )
+bool collision::above( baseObject one, baseObject two )
 {
-	//assumes actor is actually above object
-	return physics::travelTime( one.yMin - two.yMax, one.vertSpeed, physics::aGravity );
-}
-
-bool collision::above( actor one, baseObject two )
-{
+	//make sure one is withing x dimensions of two
 	if( !(one.xMax > two.xMin && one.xMin < two.xMax) )
 		return false;
 	if( (one.yMin +.01) >= two.yMax )
@@ -76,12 +70,15 @@ bool collision::above( actor one, baseObject two )
 	return false;
 }
 
-bool collision::below( actor one, baseObject two )
+bool collision::below( baseObject one, baseObject two )
 {
+	//make sure one is withing x dimensions of two
+	if( !(one.xMax > two.xMin && one.xMin < two.xMax) )
+		return false;
 	return one.yMax < two.yMin;
 }
 
-bool collision::nextTo( actor one, baseObject two )
+bool collision::nextTo( baseObject one, baseObject two )
 {
 	//return true if any point in one is between two max and min height 
 	if( (one.yMin <= two.yMax && one.yMin >= two.yMin) || 

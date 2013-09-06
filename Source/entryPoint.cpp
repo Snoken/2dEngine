@@ -1,6 +1,10 @@
 #define _CRT_SECURE_NO_DEPRECATE
 #include "soil\SOIL.h"
+
 #include <Windows.h>
+#include <direct.h>
+
+#include "fmod.hpp"
 
 #include <string>
 #include <map>
@@ -12,7 +16,6 @@
 #include "actor.h"
 #include "ground.h"
 #include "prop.h"
-#include "physics.h"
 #include "collision.h"
 #include "levelReadWrite.h"
 
@@ -23,28 +26,32 @@ list<baseObject> backgroundObjs;
 list<prop> foregroundObjs;
 list<ground> groundObjs;
 list<baseObject::vertex> vertices;
-list<baseObject> menuItems;
+list<baseObject> menuItems; //actors so they can be moved
+list<baseObject> overlay;
 map<int, bool> keyMap;
-ground *slidingOn = NULL;
+bool running = false, bSliding = false, bEditing = false;
+//FMod Stuff
+FMOD::System     *fSystem; //handle to FMOD engine
+FMOD::Sound      *soundJump, *soundMusic, *soundRun; //sound that will be loaded and played
+FMOD::Channel	 *runChan = NULL;
 
 //global vars
 int width(1600), height(900);
 actor *player = NULL;
-float aspect = (float)width/height, trans = 0.0f, timeToImpact = 0.0f, mouseX, 
-	mouseY, drawWidth = 0.0f, drawHeight = 0.0f, fallStart = 999.99f, fallEnd;
-long double elapsed, prevElapsed;
-double multiplier, frame = 0;
-GLuint tSky, tSkyLower, tDirt, tPaused, tSave, tLoad, tSlide;
-GLuint tCharStand[4];
-GLuint tCharRun[8];
-GLuint tCharJump[5];
-GLuint tWalls[5];
+float aspect = (float)width/height, trans = 0.0f, mouseX, 
+	mouseY, drawWidth = 0.0f, drawHeight = 0.0f;
+long double elapsed, prevElapsed, musicStart;
+GLuint tSky, tSkyLower, tDirt, tPaused, tSave, tLoad, tSlide, tCheck;
+vector<GLuint> tCharStand, tCharRun, tCharJump, tCharRoll, 
+	tWallsStone, tWallsWood;
 float wallDistance = 0.0f;
-bool bDrawMenu, bDrawOutline, facingRight;
+bool bDrawMenu, bDrawOutline;
 baseObject::vertex clickLoc, drawCenter;
+ground *selected = NULL;
 
 #define SPACEBAR 32
 #define ESC 27
+#define DEL 127
 
 GLuint loadTexture( const char * filename )
 {
@@ -61,27 +68,34 @@ GLuint loadTexture( const char * filename )
 void getFileWin( OPENFILENAME & ofn )
 {
 	char szFile[260];       // buffer for file name
-    HWND hwnd = NULL;              // owner window
- 
-    // Initialize OPENFILENAME
-    ZeroMemory(&ofn, sizeof(ofn));
-    ofn.lStructSize = sizeof(ofn);
-    ofn.hwndOwner = hwnd;
-    ofn.lpstrFile = szFile;
-    //
-    // Set lpstrFile[0] to '\0' so that GetOpenFileName does not 
-    // use the contents of szFile to initialize itself.
-    //
-    ofn.lpstrFile[0] = '\0';
-    ofn.nMaxFile = sizeof(szFile);
-    ofn.lpstrFilter = "Level Files (*.lvl)\0*.lvl\0";
-    ofn.nFilterIndex = 1;
-    ofn.lpstrFileTitle = NULL;
-    ofn.nMaxFileTitle = 0;
-    ofn.lpstrInitialDir = NULL;
-    ofn.Flags = OFN_PATHMUSTEXIST;
- 
-    // Display the Open dialog box. 
+	HWND hwnd = NULL;              // owner window
+
+	// Initialize OPENFILENAME
+	ZeroMemory(&ofn, sizeof(ofn));
+	ofn.lStructSize = sizeof(ofn);
+	ofn.hwndOwner = hwnd;
+	ofn.lpstrFile = szFile;
+	//
+	// Set lpstrFile[0] to '\0' so that GetOpenFileName does not 
+	// use the contents of szFile to initialize itself.
+	//
+	ofn.lpstrFile[0] = '\0';
+	/*char cCurrentPath[FILENAME_MAX];
+	if (!_getcwd(cCurrentPath, sizeof(cCurrentPath)))
+    {
+		cout << "Error getting cwd" << endl;
+		return;
+    }
+	ofn.lpstrInitialDir = cCurrentPath;*/
+	ofn.nMaxFile = sizeof(szFile);
+	ofn.lpstrFilter = "Level Files (*.lvl)\0*.lvl\0";
+	ofn.nFilterIndex = 1;
+	ofn.lpstrFileTitle = NULL;
+	ofn.nMaxFileTitle = 0;
+	ofn.lpstrInitialDir = NULL;
+	ofn.Flags = OFN_PATHMUSTEXIST;
+
+	// Display the Open dialog box. 
 	GetOpenFileName(&ofn);
 }
 
@@ -92,8 +106,11 @@ void initKeyMap()
 	keyMap.insert( make_pair( 'a', false ));
 	keyMap.insert( make_pair( 's', false ));
 	keyMap.insert( make_pair( 'd', false ));
-	keyMap.insert( make_pair( ESC, false )); //escape key
-	keyMap.insert( make_pair( SPACEBAR, false )); //escape key
+	keyMap.insert( make_pair( 'o', false )); //toggle editor
+	keyMap.insert( make_pair( ESC, false ));
+	keyMap.insert( make_pair( SPACEBAR, false ));
+	keyMap.insert( make_pair( DEL, false ));
+
 }
 
 //glut needs this even if it's empty for some reason
@@ -114,7 +131,7 @@ void reshape(GLsizei newWidth, GLsizei newHeigth) {  // GLsizei for non-negative
 	// Set the aspect ratio of the clipping area to match the viewport
 	glMatrixMode(GL_MODELVIEW); //To operate on the Projection matrix
 	glLoadIdentity(); //Reset the projection matrix
-	glTranslatef(trans, 0.0f, 0.0f); //move camera to player location
+	glTranslatef(trans, 0.0f, 0.0f); //moveByTimeX camera to player location
 	glPopMatrix();
 	if (width >= height)
 		// aspect >= 1, set the height from -1 to 1, with larger width
@@ -129,8 +146,16 @@ void initObjects()
 	//make basic objects for start
 	groundObjs.push_back( baseObject( 
 		baseObject::vertex( 0.0f, -0.95f ), 200.0f, .1f, tDirt ) );
-	groundObjs.push_back( baseObject( 
-		baseObject::vertex( 1.625f, -.775f ), .25f, .25f, tWalls[rand() % 5] ) );
+
+	/*list<baseObject::vertex> verts;
+	verts.push_back( baseObject::vertex( .1f, -.9f ) );
+	verts.push_back( baseObject::vertex( .1f, -.7f ) );
+	verts.push_back( baseObject::vertex( -.1f, -.9f ) );
+	groundObjs.push_back( baseObject(
+		baseObject::vertex( 0.0f, -0.8f ), verts ) );*/
+
+	/*groundObjs.push_back( baseObject( 
+		baseObject::vertex( 1.625f, -.775f ), .25f, .25f, tWallsStone[rand() % 5] ) );*/
 }
 
 void initMenu()
@@ -150,6 +175,45 @@ void initMenu()
 		baseObject::vertex( (-aspect + 0.25f) + .25f, 0.325f ), .5f, .25f, tLoad ) );
 }
 
+void initOverlay()
+{
+	float gap = .015f, sqDim = .09f, startX = 0, startY = .775f;
+	startX = aspect-gap;
+	vector<GLuint> *curr;
+	for( int i = 0; i < 2; ++i )
+	{
+		if( i != 1 )
+			curr = &tWallsStone;
+		else
+			curr = &tWallsWood;
+		float currY = startY;
+		for( int j = 0; (unsigned)j < curr->size(); ++j )
+		{	
+			overlay.push_back( baseObject( baseObject::vertex( 
+				startX-(sqDim/2), currY + .05f ), sqDim, sqDim, (*curr)[j] ) );
+			currY -= sqDim + .005f;
+		}
+		startX -= sqDim + .005f;
+	}
+
+	//boxes for rotation selection, textures are set to angle*10
+	overlay.push_back( baseObject( baseObject::vertex( 
+				aspect-.344f, .34f + .025f ), .05f, .05f, 3600 ) );
+
+	overlay.push_back( baseObject( baseObject::vertex( 
+				aspect-.256f, .34f + .025f ), .05f, .05f, 900 ) );
+
+	overlay.push_back( baseObject( baseObject::vertex( 
+				aspect-.163f, .34f + .025f ), .05f, .05f, 1800 ) );
+
+	overlay.push_back( baseObject( baseObject::vertex( 
+				aspect-.0635f, .34f + .025f ), .05f, .05f, 2700 ) );
+
+	//platform toggle box, texture used to identify object
+	overlay.push_back( baseObject( baseObject::vertex( 
+				aspect-.344f, .215f + .025f ), .035f, .035f, 290) );
+}
+
 void drawMenu()
 {
 	list<baseObject>::iterator itr = menuItems.begin();
@@ -157,10 +221,10 @@ void drawMenu()
 	glColor4f(0.0f, 0.0f, 0.0f, 0.9f);
 	//faded black overlay
 	glBegin(GL_QUADS);
-	glVertex2f(itr->xMin,itr->yMin);
-	glVertex2f(itr->xMin,itr->yMax);
-	glVertex2f(itr->xMax,itr->yMax);
-	glVertex2f(itr->xMax,itr->yMin);
+	glVertex2f(itr->xMin+player->origin.x,itr->yMin);
+	glVertex2f(itr->xMin+player->origin.x,itr->yMax);
+	glVertex2f(itr->xMax+player->origin.x,itr->yMax);
+	glVertex2f(itr->xMax+player->origin.x,itr->yMin);
 	glEnd();
 	++itr;
 
@@ -172,12 +236,13 @@ void drawMenu()
 		glBindTexture( GL_TEXTURE_2D, itr->texture );
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		glBegin(GL_QUADS);
-		glTexCoord2f(0.0f,0.0f); glVertex2f(itr->xMin,itr->yMin);
-		glTexCoord2f(0.0f,1.0f); glVertex2f(itr->xMin,itr->yMax);
-		glTexCoord2f(1.0f,1.0f); glVertex2f(itr->xMax,itr->yMax);
-		glTexCoord2f(1.0f,0.0f); glVertex2f(itr->xMax,itr->yMin);
+		glTexCoord2f(0.0f,0.0f); glVertex2f(itr->xMin+player->origin.x,itr->yMin);
+		glTexCoord2f(0.0f,1.0f); glVertex2f(itr->xMin+player->origin.x,itr->yMax);
+		glTexCoord2f(1.0f,1.0f); glVertex2f(itr->xMax+player->origin.x,itr->yMax);
+		glTexCoord2f(1.0f,0.0f); glVertex2f(itr->xMax+player->origin.x,itr->yMin);
 		glEnd();
 	}
+	glDisable( GL_TEXTURE_2D );
 }
 
 void drawSky()
@@ -194,15 +259,15 @@ void drawSky()
 	glTexCoord2f(aspect/0.1f,0.0f); glVertex2f(aspect+player->origin.x,-1.0);
 	glEnd();
 
-	//sky gradient
-	glBindTexture( GL_TEXTURE_2D, tSkyLower );
+	//sky gradient: this is no longer used
+	/*glBindTexture( GL_TEXTURE_2D, tSkyLower );
 	glBegin(GL_QUADS);
 	glTexCoord2f(0.0f,0.0f); glVertex2f(-aspect+player->origin.x,-0.9f);
 	glTexCoord2f(0.0f,1.0f); glVertex2f(-aspect+player->origin.x,-0.8f);
 	glTexCoord2f(aspect/0.1f,1.0f); glVertex2f(aspect+player->origin.x,-0.8f);
 	glTexCoord2f(aspect/0.1f,0.0f); glVertex2f(aspect+player->origin.x,-0.9f);
 	glEnd();
-	glDisable( GL_TEXTURE_2D );
+	glDisable( GL_TEXTURE_2D );*/
 }
 
 void drawPlayer()
@@ -212,59 +277,60 @@ void drawPlayer()
 	glEnable( GL_TEXTURE_2D );
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-	//bind appropriate texture to player, increment frame as appropriate based on player state
-	//if player is in air
-	if( !player->bOnGround )
+	//bind appropriate texture to player, increment m_frame as appropriate based 
+	//		if player is in air on player state
+	if( !player->m_bOnGround )
 	{
-		if( player->bOnWall )
+		if( player->m_bOnWall )
 			glBindTexture( GL_TEXTURE_2D, tSlide );
 		else
-		{
-			frame += .15;
-			if( frame >= 5 )
-				frame = 4;
-			glBindTexture( GL_TEXTURE_2D, tCharJump[(int)floor(frame)] );
-		}
+			glBindTexture( GL_TEXTURE_2D, tCharJump[(int)floor(player->m_frame)] );
 	}
-	//if player isn't moving
-	else if( multiplier == 0 )
-	{
-		frame += .05;
-		if( frame >= 4 )
-			frame = 0;
-		glBindTexture( GL_TEXTURE_2D, tCharStand[(int)floor(frame)] );
-	}
-	//if player is running
 	else
 	{
-		frame += .2;
-		if( frame >= 8 )
-			frame = 0;
-		glBindTexture( GL_TEXTURE_2D, tCharRun[(int)floor(frame)] );
+		if( player->m_state == actor::RUNNING )
+			glBindTexture( GL_TEXTURE_2D, tCharRun[(int)floor(player->m_frame)] );
+		else if( player->m_state == actor::ROLLING )
+			glBindTexture( GL_TEXTURE_2D, tCharRoll[(int)floor(player->m_frame)] );
+		else if( player->m_state == actor::IDLE )
+			glBindTexture( GL_TEXTURE_2D, tCharStand[(int)floor(player->m_frame)] );
 	}
 
 	glBegin(GL_QUADS);
 	//draw textures appropriately based on movement direction
-	if( facingRight )
+	baseObject::vertex center = player->origin;
+	float w = player->width, h = player->height;
+	//compensate for changed player dimensions if rolling
+	//NOTE: This is a hack, fix this
+	if( player->m_bIsRolling )
 	{
-		glTexCoord2f(0.0f,0.0f); glVertex2f(player->origin.x - .1f, player->origin.y - .1f);
-		glTexCoord2f(0.0f,1.0f); glVertex2f(player->origin.x - .1f, player->origin.y + .1f);
-		glTexCoord2f(1.0f,1.0f); glVertex2f(player->origin.x + .1f, player->origin.y + .1f);
-		glTexCoord2f(1.0f,0.0f); glVertex2f(player->origin.x + .1f, player->origin.y - .1f);
+		center.y = player->yMin + h;
+		w*=2; h*=2;
+	}
+	//draw player, direction switches based on m_bIsFacingRight
+	if( player->m_bFacingRight )
+	{
+		glTexCoord2f(0.0f,0.0f); glVertex2f(center.x - h/2, player->yMin -.01f);
+		glTexCoord2f(0.0f,1.0f); glVertex2f(center.x - h/2, player->yMin + h);
+		glTexCoord2f(1.0f,1.0f); glVertex2f(center.x + h/2, player->yMin + h);
+		glTexCoord2f(1.0f,0.0f); glVertex2f(center.x + h/2, player->yMin -.01f);
 	}
 	else
 	{
-		glTexCoord2f(1.0f,0.0f); glVertex2f(player->origin.x - .1f, player->origin.y - .1f);
-		glTexCoord2f(1.0f,1.0f); glVertex2f(player->origin.x - .1f, player->origin.y + .1f);
-		glTexCoord2f(0.0f,1.0f); glVertex2f(player->origin.x + .1f, player->origin.y + .1f);
-		glTexCoord2f(0.0f,0.0f); glVertex2f(player->origin.x + .1f, player->origin.y - .1f);
+		glTexCoord2f(1.0f,0.0f); glVertex2f(center.x - h/2, player->yMin -.01f);
+		glTexCoord2f(1.0f,1.0f); glVertex2f(center.x - h/2, player->yMin + h);
+		glTexCoord2f(0.0f,1.0f); glVertex2f(center.x + h/2, player->yMin + h);
+		glTexCoord2f(0.0f,0.0f); glVertex2f(center.x + h/2, player->yMin -.01f);
 	}
 	glEnd();
 	glDisable( GL_TEXTURE_2D );
 
 	//draw health bar
-	float width = ((player->xMax - .01f) - (player->xMin + .01f))*player->health/100.0f;
+	float width = ((player->xMax - .01f) - (player->xMin + .01f))*player->getHealth()/100.0f;
+	if( width < 0.0f )
+		width = 0.0f;
 
+	//draw the red area
 	glBegin( GL_QUADS );
 	glColor4f(1.0f, 0.0f,0.0f,1.0f);
 	glVertex2f( player->xMin + .01f, player->yMax +.01f );
@@ -273,6 +339,7 @@ void drawPlayer()
 	glVertex2f( player->xMin + .01f + width, player->yMax + .01f );
 	glEnd();
 
+	//health bar outline
 	glBegin( GL_LINES );
 	glColor4f(0.0f, 0.0f,0.0f,1.0f);
 	glVertex2f( player->xMin + .01f, player->yMax +.01f );
@@ -291,26 +358,28 @@ void drawPlayer()
 
 void drawGrid()
 {
+	//change this to change size of drawn grid
+	float sqSize = .05f;
 	//draw the grid for guides
 	glBegin(GL_LINES);
 	glColor4f(1.0f, 1.0f, 1.0f, 0.25f);
-	for( float x = 0.0f; x < 100.0f; x += .05f )
+	for( float x = 0.0f; x < 100.0f; x += sqSize )
 	{
 		glVertex2f( x, 1.0f );
 		glVertex2f( x, -1.0f );
 	}
-	for( float x = -0.05f; x > -100.0f; x -= .05f )
+	for( float x = -0.05f; x > -100.0f; x -= sqSize )
 	{
 		glVertex2f( x, 1.0f );
 		glVertex2f( x, -1.0f );
 	}
 
-	for( float y = 0.0f; y < 1; y += .05f )
+	for( float y = 0.0f; y < 1; y += sqSize )
 	{
 		glVertex2f( -100, y );
 		glVertex2f( 100, y );
 	}
-	for( float y = -0.05f; y > -1; y -= .05f )
+	for( float y = -0.05f; y > -1; y -= sqSize )
 	{
 		glVertex2f( -100, y );
 		glVertex2f( 100, y );
@@ -320,9 +389,10 @@ void drawGrid()
 
 void drawOutline()
 {
-	//only draw if there's an outline to draw
+	//only draw if there's an outline to draw (user is actively clicking and dragging mouse)
 	if( abs(drawHeight) != 0.0f && abs(drawWidth) != 0.0f )
 	{
+		//draw the border of the current drawing area
 		glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 		glBegin(GL_LINES);
 
@@ -338,7 +408,7 @@ void drawOutline()
 		glVertex2f( clickLoc.x + drawWidth, clickLoc.y );
 		glVertex2f( clickLoc.x, clickLoc.y );
 
-		//draw subdivision lines
+		//draw subdivision lines, method differs based on whether width or height is greater
 		if( abs(drawWidth) > abs(drawHeight) )
 		{
 			float endX = clickLoc.x + drawWidth;
@@ -375,6 +445,7 @@ void drawOutline()
 
 void drawBackground()
 {
+	//fairly simple function, draws all objects in the background list
 	for( list<baseObject>::iterator objItr = backgroundObjs.begin(); objItr != backgroundObjs.end(); ++objItr )
 	{
 		glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
@@ -388,7 +459,8 @@ void drawBackground()
 		glEnd();
 		glDisable( GL_TEXTURE_2D );
 
-		if( objItr->bSelected )
+		//shade red if selected
+		if( objItr->bSelected && bEditing )
 		{
 			glBegin(GL_POLYGON);
 			glColor4f(1.0f, 0.0f, 0.0f, 0.5f);
@@ -402,40 +474,80 @@ void drawBackground()
 
 void drawGround()
 {
-	for( list<ground>::iterator objItr = groundObjs.begin(); objItr != groundObjs.end(); ++objItr )
+	//fairly simple function, draws all objects in the ground list
+	for( list<ground>::reverse_iterator objItr = groundObjs.rbegin(); objItr != groundObjs.rend(); ++objItr )
 	{
+		//bind appropriate texture
 		glEnable( GL_TEXTURE_2D );
 		if( objItr->texture == 0 )
-			objItr->texture = tWalls[rand() % 5];
+			objItr->texture = tWallsStone[rand() % 5];
 
 		glBindTexture( GL_TEXTURE_2D, objItr->texture );
+
+		//rotate texture as needed(need to translate first to rotate about center)
+		glMatrixMode(GL_TEXTURE);
+		glLoadIdentity();
+		glTranslatef(0.5,0.5,0.0);
+		glRotatef(objItr->texRotation,0.0,0.0,1.0);
+		glTranslatef(-0.5,-0.5,0.0);
+
+		//switch back to modelview and draw objects
+		glMatrixMode(GL_MODELVIEW);
 		glBegin(GL_POLYGON);
 		glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-		if( objItr->width > objItr->height )
+		if( objItr->points.size() == 4 )
 		{
-			glTexCoord2f(0.0f,0.0f); glVertex2f(objItr->xMin,objItr->yMin);
-			glTexCoord2f(0.0f,1.0f); glVertex2f(objItr->xMin,objItr->yMax);
-			glTexCoord2f(objItr->width/objItr->height,1.0f); glVertex2f(objItr->xMax,objItr->yMax);
-			glTexCoord2f(objItr->width/objItr->height,0.0f); glVertex2f(objItr->xMax,objItr->yMin);
+			//switch draw method based upon width and height
+			if( objItr->width > objItr->height )
+			{
+				glTexCoord2f(0.0f,0.0f); glVertex2f(objItr->xMin,objItr->yMin);
+				glTexCoord2f(0.0f,1.0f); glVertex2f(objItr->xMin,objItr->yMax);
+				glTexCoord2f(objItr->width/objItr->height,1.0f); glVertex2f(objItr->xMax,objItr->yMax);
+				glTexCoord2f(objItr->width/objItr->height,0.0f); glVertex2f(objItr->xMax,objItr->yMin);
+			}
+			else
+			{
+				glTexCoord2f(0.0f,0.0f); glVertex2f(objItr->xMin,objItr->yMin);
+				glTexCoord2f(0.0f,objItr->height/objItr->width); glVertex2f(objItr->xMin,objItr->yMax);
+				glTexCoord2f(1.0f,objItr->height/objItr->width); glVertex2f(objItr->xMax,objItr->yMax);
+				glTexCoord2f(1.0f,0.0f); glVertex2f(objItr->xMax,objItr->yMin);
+			}
 		}
-		else
+		//impl for triangle drawing, not used right now
+		else if( objItr->points.size() == 3 )
 		{
-			glTexCoord2f(0.0f,0.0f); glVertex2f(objItr->xMin,objItr->yMin);
-			glTexCoord2f(0.0f,objItr->height/objItr->width); glVertex2f(objItr->xMin,objItr->yMax);
-			glTexCoord2f(1.0f,objItr->height/objItr->width); glVertex2f(objItr->xMax,objItr->yMax);
-			glTexCoord2f(1.0f,0.0f); glVertex2f(objItr->xMax,objItr->yMin);
+			list<baseObject::vertex>::iterator itr = objItr->points.begin();
+			glTexCoord2f(0.0f,0.0f); glVertex2f(itr->x,itr->y);
+			++itr;
+			glTexCoord2f(0.0f,1.0f); glVertex2f(itr->x,itr->y);
+			++itr;
+			glTexCoord2f(1.0f,1.0f); glVertex2f(itr->x,itr->y);
 		}
 		glEnd();
 		glDisable( GL_TEXTURE_2D );
 
-		if( objItr->bSelected )
+		//shade red if selected
+		if( objItr->bSelected && bEditing )
 		{
 			glBegin(GL_POLYGON);
 			glColor4f(1.0f, 0.0f, 0.0f, 0.25f);
-			glVertex2f(objItr->xMin,objItr->yMin);
-			glVertex2f(objItr->xMin,objItr->yMax);
-			glVertex2f(objItr->xMax,objItr->yMax);
-			glVertex2f(objItr->xMax,objItr->yMin);
+			//impl for triangle drawing, not used right now
+			if( objItr->points.size() == 3 )
+			{
+				list<baseObject::vertex>::iterator itr = objItr->points.begin();
+				glVertex2f(itr->x,itr->y);
+				++itr;
+				glVertex2f(itr->x,itr->y);
+				++itr;
+				glVertex2f(itr->x,itr->y);
+			}
+			else
+			{
+				glVertex2f(objItr->xMin,objItr->yMin);
+				glVertex2f(objItr->xMin,objItr->yMax);
+				glVertex2f(objItr->xMax,objItr->yMax);
+				glVertex2f(objItr->xMax,objItr->yMin);
+			}
 			glEnd();
 		}
 	}
@@ -443,6 +555,7 @@ void drawGround()
 
 void drawForeground()
 {
+	//extremely simple function, just draws foreground, no support for textures yet
 	for( list<prop>::iterator objItr = foregroundObjs.begin(); objItr != foregroundObjs.end(); ++objItr )
 	{
 		glBegin(GL_POLYGON);
@@ -453,6 +566,131 @@ void drawForeground()
 	}
 }
 
+void drawCursor()
+{
+	//draw a crosshair for cursor
+	glColor4f(1.0f,1.0f,1.0f,1.0f);
+	glBegin(GL_LINES);
+	glVertex2f(mouseX - .025f, mouseY);
+	glVertex2f(mouseX + .025f, mouseY);
+
+	glVertex2f(mouseX, mouseY - .025f);
+	glVertex2f(mouseX, mouseY + .025f);
+	glEnd();
+}
+
+void drawOverlay()
+{
+	//draws editing overlay
+	float gap = .015f, sqWidth = .09f, startX = 0, 
+		overWidth = .505f, startY = .395f, offset = player->origin.x;
+	glColor4f(0,0,0,0.9f);
+	glBegin(GL_QUADS);
+	//this is the black background
+	glVertex2f(aspect+offset, 1);
+	glVertex2f(aspect+offset, -1);
+	glVertex2f(aspect-overWidth+offset, -1);
+	glVertex2f(aspect-overWidth+offset, 1);
+
+	//small white line at edge of bar
+	glColor4f(1,1,1,1);
+	glVertex2f(aspect-overWidth+offset, 1);
+	glVertex2f(aspect-overWidth+offset, -1);
+	glVertex2f(aspect-overWidth-.005f+offset, -1);
+	glVertex2f(aspect-overWidth-.005f+offset, 1);
+	glEnd();
+
+	glColor4f(1,1,1,1);
+	//ideally like to add support for more amounts of textures, limited right now
+	string temp = "Textures";
+	glRasterPos2f(aspect-.325f+offset,.925f);
+	glutBitmapString(GLUT_BITMAP_HELVETICA_18, (unsigned char*)temp.c_str());
+
+	temp = "Stone";
+	glRasterPos2f(aspect-.0925f+offset,.885f);
+	glutBitmapString(GLUT_BITMAP_HELVETICA_10, (unsigned char*)temp.c_str());
+
+	temp = "Wood";
+	glRasterPos2f(aspect-.1825f+offset,.885f);
+	glutBitmapString(GLUT_BITMAP_HELVETICA_10, (unsigned char*)temp.c_str());
+
+	//display samples of all textures available
+	glEnable(GL_TEXTURE_2D);
+	startX = aspect-gap;
+	list<baseObject>::iterator itr = overlay.begin();
+	for( int i = 0; (unsigned)i < tWallsStone.size() + tWallsWood.size(); ++i, ++itr )
+	{
+		glBindTexture( GL_TEXTURE_2D, itr->texture );
+		glBegin(GL_QUADS);
+		glTexCoord2f(0,0); glVertex2f(itr->xMin+offset,itr->yMin);
+		glTexCoord2f(0,1); glVertex2f(itr->xMin+offset,itr->yMax);
+		glTexCoord2f(1,1); glVertex2f(itr->xMax+offset,itr->yMax);
+		glTexCoord2f(1,0); glVertex2f(itr->xMax+offset,itr->yMin);
+		glEnd();
+	}
+	glDisable(GL_TEXTURE_2D);
+
+	//title for rotation menu
+	temp = "Rotation:";
+	glRasterPos2f(aspect-.485f+offset,.355f);
+	glutBitmapString(GLUT_BITMAP_HELVETICA_12, (unsigned char*)temp.c_str());
+
+	//draw rest of boxes
+	while (itr != overlay.end())
+	{
+		glBegin(GL_QUADS);
+		glColor4f(1,1,1,1);
+		glVertex2f(itr->xMin+offset,itr->yMin);
+		glVertex2f(itr->xMin+offset,itr->yMax);
+		glVertex2f(itr->xMax+offset,itr->yMax);
+		glVertex2f(itr->xMax+offset,itr->yMin);
+		glEnd();
+		if( itr->texture == 290 )
+		{	
+			if( selected != NULL && selected->bIsPlatform )
+			{
+				glEnable(GL_TEXTURE_2D);
+				glBindTexture( GL_TEXTURE_2D, tCheck );
+				glBegin(GL_QUADS);
+				glTexCoord2f(0,0); glVertex2f(itr->xMin+offset-.01f,itr->yMin-.01f);
+				glTexCoord2f(0,1); glVertex2f(itr->xMin+offset-.01f,itr->yMax+.01f);
+				glTexCoord2f(1,1); glVertex2f(itr->xMax+offset+.01f,itr->yMax+.01f);
+				glTexCoord2f(1,0); glVertex2f(itr->xMax+offset+.01f,itr->yMin-.01f);
+				glEnd();
+				glDisable(GL_TEXTURE_2D);
+			}
+		}
+		++itr;
+	}
+
+	//these need to be drawn after boxes
+	glColor4f(0,0,0,1);
+	temp = "0";
+	glRasterPos2f(aspect-.35f+offset,.355f);
+	glutBitmapString(GLUT_BITMAP_HELVETICA_12, (unsigned char*)temp.c_str());
+
+	temp = "90";
+	glRasterPos2f(aspect-.27f+offset,.355f);
+	glutBitmapString(GLUT_BITMAP_HELVETICA_12, (unsigned char*)temp.c_str());
+
+	temp = "180";
+	glRasterPos2f(aspect-.185f+offset,.355f);
+	glutBitmapString(GLUT_BITMAP_HELVETICA_12, (unsigned char*)temp.c_str());
+
+	temp = "270";
+	glRasterPos2f(aspect-.085f+offset,.355f);
+	glutBitmapString(GLUT_BITMAP_HELVETICA_12, (unsigned char*)temp.c_str());
+
+	glColor4f(1,1,1,1);
+	temp = "Properties";
+	glRasterPos2f(aspect-.325f+offset,.275f);
+	glutBitmapString(GLUT_BITMAP_HELVETICA_18, (unsigned char*)temp.c_str());
+
+	temp = "Platform?";
+	glRasterPos2f(aspect-.485f+offset,.23f);
+	glutBitmapString(GLUT_BITMAP_HELVETICA_12, (unsigned char*)temp.c_str());
+}
+
 void redraw()
 {
 	glClear(GL_COLOR_BUFFER_BIT);
@@ -460,43 +698,51 @@ void redraw()
 	//each draw call is essentially a layer, the first call is the furthest back
 	drawSky();
 	drawBackground();
-	drawGrid();
 	drawGround();
+	if( bEditing )
+		drawGrid();
 	drawPlayer();
 	drawForeground();
 	if( bDrawOutline )
 		drawOutline();
+	if( bEditing )
+		drawOverlay();
 	if( bDrawMenu )
 		drawMenu();
-
+	drawCursor();
+	
 	glutSwapBuffers();
+}
+
+void tryDelete()
+{
+	//delete object if one is selected (and if it's not the main ground obj)
+	for(list<ground>::iterator itr = groundObjs.begin(); itr != groundObjs.end(); ++itr )
+	{
+		if( itr->bSelected && itr != groundObjs.begin())
+		{
+			groundObjs.remove(*itr);
+			return;
+		}
+	}
 }
 
 void keyUp(unsigned char key, int x, int y)
 {
+	//adjust to lower case if needed
+	if( key >= 'A' && key <= 'Z' )
+		key += 32;
 	map<int, bool>::iterator currKey = keyMap.find(key);
 	//if the released key is in the map unset pressed
 	if( currKey != keyMap.end() )
-	{
 		currKey->second = false;
-	}
 }
 
-//find the linear distance between two points
-float pointDistance( const baseObject::vertex & one, const baseObject::vertex & two )
-{
-	return sqrt( pow(two.x - one.x, 2) + pow(two.y - one.y, 2) );
-}
-
-bool facing( actor one, baseObject two, bool right )
-{
-	//check if actor is facing the given object
-	if( two.xMin >= one.xMax && right )
-		return true;
-	else if( two.xMax <= one.xMin && !right )
-		return true;
-	return false;
-}
+//find the linear distance between two points, currently unused
+//float pointDistance( const baseObject::vertex & one, const baseObject::vertex & two )
+//{
+//	return sqrt( pow(two.x - one.x, 2) + pow(two.y - one.y, 2) );
+//}
 
 ground *getCurrentGround( actor one )
 {
@@ -505,6 +751,8 @@ ground *getCurrentGround( actor one )
 	ground *belowPlayer = NULL;
 	for( list<ground>::iterator itr = groundObjs.begin(); itr != groundObjs.end(); ++itr )
 	{
+		//this checks that one is above *itr (y-dir only) and that one is at least 
+		//	in part between the max and min of *itr
 		if( collision::above( one, *itr ) && one.yMin - itr->yMax < lowestDif )
 		{
 			lowestDif = one.yMin - itr->yMax;
@@ -514,19 +762,40 @@ ground *getCurrentGround( actor one )
 	return belowPlayer;
 }
 
+ground *getCurrentCeiling( actor one )
+{
+	//figure out which ground is below given actor
+	float lowestDif = 999.99f;
+	ground *abovePlayer = NULL;
+	for( list<ground>::iterator itr = groundObjs.begin(); itr != groundObjs.end(); ++itr )
+	{
+		//this checks that one is below *itr (y-dir only) and that one is at least 
+		//	in part between the max and min of *itr
+		if( collision::above( *itr, one ) && itr->yMin - one.yMax < lowestDif )
+		{
+			lowestDif = itr->yMin - one.yMax;
+			abovePlayer = &(*itr);
+		}
+	}
+	return abovePlayer;
+}
+
 void getNearbyWalls( actor one, const float & maxDistance, list<ground> &nearby )
 {
 	//get list of walls nearest actor
 	for( list<ground>::iterator itr = groundObjs.begin(); itr != groundObjs.end(); ++itr )
 	{
 		float gapSize = 0.0f;
+		//determine position of one relative to *itr, set gap distance accordingly
 		if( itr->xMin > one.xMax )
 			gapSize = itr->xMin - one.xMax;
 		else
 			gapSize = one.xMin - itr->xMax;
 
-		if( gapSize < maxDistance && collision::nextTo( one, *itr ) && !collision::above( one, *itr ) )
-				nearby.push_back( *itr );
+		//if one is less than the max gap size away from *itr, and next to it, and not above or below it
+		if( gapSize < maxDistance && collision::nextTo( one, *itr ) && !collision::above( one, *itr )
+			&& !collision::below( one, *itr ))
+			nearby.push_back( *itr );
 	}
 }
 
@@ -535,138 +804,42 @@ void updatePlayerLocation( const long double & elapsed )
 {
 	if( !bDrawMenu )
 	{
-		//figure out which ground object the player is currently above
-		actor *temp;
+		//fetch data needed for player move
 		ground *belowPlayer = getCurrentGround( *player );
+		ground *abovePlayer = getCurrentCeiling( *player );
 		float maxDistance = 0.5f;
 		list<ground> nearby;
-		
 		getNearbyWalls( *player, maxDistance, nearby );
-
-		if( player->bOnWall && slidingOn->yMin >= player->yMin )
+		//play running sound if player moving and on ground
+		if( player->getMult() != 0.0 && player->m_bOnGround)
 		{
-			player->bOnWall = false;
-			slidingOn = NULL;
+			if( runChan == NULL )
+				fSystem->playSound(FMOD_CHANNEL_FREE, soundRun, false, &runChan);
 		}
-
-		if( slidingOn != NULL )
+		else
 		{
-			if( !player->bOnWall )
-				facingRight = !facingRight;
-			player->bOnWall = true;
-			fallStart = player->origin.y;
+			if( runChan != NULL )
+				runChan->stop();
+			runChan = NULL;
 		}
-
-		if( player->bOnWall && (keyMap.find('w'))->second == true )
-		{
-			facingRight ? multiplier = 1.0f: multiplier = -1.0f;
-			player->bOnWall = false;
-			player->vertSpeed = 3.0f;
-			slidingOn = NULL;
-		}
-		else if( player->bOnWall && (keyMap.find('d'))->second == true && facingRight )
-		{
-			player->bOnWall = false;
-			slidingOn = NULL;
-		}
-		else if( player->bOnWall && (keyMap.find('a'))->second == true && !facingRight )
-		{
-			player->bOnWall = false;
-			slidingOn = NULL;
-		}
-
-		if( player->vertSpeed < 0.0f && fallStart == 999.99f )
-			fallStart = player->origin.y;
-
-		if( player->yMin - belowPlayer->yMax > .005 )
-			player->bOnGround = false;
-
-		//if the player is currently in the air, apply gravity
-		if( !player->bOnGround )
-		{
-			temp = new actor(*player);
-			//apply gravity to copy to make sure they don't fall through world
-			if( player->bOnWall )
-				temp->moveY( temp->slideSpeed * (float)elapsed );
-			else
-				physics::applyGravity( temp, elapsed );
-			//if next iter of motion still leaves player above ground, do it			
-			if(collision::timeToCollisionY( *temp, *belowPlayer ) > 0)
-			{
-				player=temp;
-				timeToImpact = collision::timeToCollisionY( *temp, *belowPlayer );
-			}
-			//otherwise, move player just enough to be on ground
-			else
-			{
-				physics::moveByTimeY( player, timeToImpact );
-				fallEnd = player->origin.y;
-				player->takeFallDamage( fallStart-fallEnd );
-				fallStart = 999.99f;
-
-			}
-		}
-
-		if( multiplier != 0.0f && !player->bOnWall )
-		{
-			//check if there is a wall within 1.0f
-			if( nearby.empty() )
-			{
-				player->move( multiplier );
-			}
-			//try moving
-			else
-			{
-				temp = new actor(*player);
-				bool moved = false;
-				temp->move( multiplier );
-				for( list<ground>::iterator itr = nearby.begin(); itr != nearby.end(); ++itr )
-				{
-					if( player->xMin == itr->xMax )
-					{
-						if( multiplier < 0)
-						{
-							multiplier = 0.0f;
-							moved = true;
-							break;
-						}
-					}
-					else if( player->xMax == itr->xMin )
-					{
-						if( multiplier > 0)
-						{
-							multiplier = 0.0f;
-							moved = true;
-							break;
-						}
-					}
-					if( collision::areColliding( *temp, *itr ) && !itr->bIsPlatform )
-					{
-						if( !player->bOnGround )
-							slidingOn = &(*itr);
-						if(player->xMin > itr->xMax) 
-							player->moveX( -(player->xMin - itr->xMax) );
-						else
-							player->moveX( itr->xMin - player->xMax );
-						multiplier = 0.0f;
-						moved = true;
-						break;
-					}
-				}
-				if( !moved )
-					player = temp;
-			}
-		}
+		//move player, this is the function that actually handles movement
+		player->updateLocation( elapsed, belowPlayer, abovePlayer, &nearby, &keyMap );
 	}
 }
 
 void keyPress(unsigned char key, int x, int y)
 {
+	//adjust to lower case if needed
+	if( key >= 'A' && key <= 'Z' )
+		key += 32;
 	//set appropriate key to pressed
 	if (keyMap.find(key) != keyMap.end())
 	{
+		//esc and o are special cases
 		if( key == ESC ) //escape key
 			bDrawMenu = !bDrawMenu;
+		else if( key == 'o' )
+			bEditing = !bEditing;
 		map<int, bool>::iterator currKey = keyMap.find( key );
 		currKey->second = true;
 	}
@@ -677,84 +850,48 @@ void idleFunction(void)
 	//react based on which keys are pressed
 	if( !bDrawMenu )
 	{
-		if (keyMap.find('a')->second == false && keyMap.find('d')->second == false && multiplier != 0)
-		{
+		if( bEditing && keyMap.find(DEL)->second == true )
+			tryDelete();
+		if (keyMap.find('a')->second == false && keyMap.find('d')->second == false)
 			//decay the multiplier if no keys are being pressed
-			if( player->bOnGround )
-			{
-				if( multiplier < .05 && multiplier > -.05 )
-				{
-					frame = 0;
-					multiplier = 0;
-				}
-				else
-					multiplier /= 1.2;
-			}
-		}
-		if (keyMap.find('a')->second == true)
+			player->decayMult();
+		if (keyMap.find('s')->second == true)
 		{
-			//only do if player is not on wall and not facing right
-			if( !(player->bOnWall && facingRight) )
-			{
-				facingRight = false;
-				//logic for ramping up move speed
-				if( multiplier >= 0 )
-				{
-					if( player->bOnGround )
-						multiplier = -.1;
-					else
-						multiplier -= .1;
-				}
-				else if( multiplier > -1.0 )
-				{
-					if( multiplier > -.1 )
-						multiplier = -.1;
-					multiplier *= 1.2;
-				}
-				else
-					multiplier = -1.0;
-			}
+			//roll is not rolling and on ground
+			if(player->m_bOnGround && !player->m_bIsRolling)
+				player->startRoll( elapsed );
+		}
+		else if (keyMap.find('a')->second == true)
+		{
+			if(!bSliding)
+				player->m_bFacingRight = false;
+			player->updateMult();
 		}
 		else if (keyMap.find('d')->second == true)
 		{
-			//only do if player is not on wall and not facing left
-			if( !(player->bOnWall && !facingRight) )
-			{
-				facingRight = true;
-				//logic for ramping up move speed
-				if( multiplier <= 0 )
-					if( player->bOnGround )
-						multiplier = .1;
-					else
-						multiplier += .1;
-				else if( multiplier < 1.0 )
-				{
-					if( multiplier < .1 )
-						multiplier = .1;
-					multiplier *= 1.2;
-				}
-				else
-					multiplier = 1.0;
-			}
+			if(!bSliding)
+				player->m_bFacingRight = true;
+			player->updateMult();
 		}
 		if (keyMap.find('w')->second == true || keyMap.find(SPACEBAR)->second == true)
-		{
-			//if player is on the ground, allow them to jump
-			if( player->bOnGround )
+			if( player->m_bOnGround )
 			{
-				frame = 0;
+				//play jump sound
+				fSystem->playSound(FMOD_CHANNEL_FREE, soundJump, false, 0);
 				player->jump();
 			}
-		}
 	}
 
 	//save old elapsed time
-	prevElapsed = elapsed;
+	if (elapsed == 0)
+		prevElapsed = glutGet(GLUT_ELAPSED_TIME)/1000.0;
+	else
+		prevElapsed = elapsed;
 	//get new elapsed time
 	elapsed = glutGet(GLUT_ELAPSED_TIME)/1000.0;
 	updatePlayerLocation( elapsed - prevElapsed );
 
-	//adjust viewpoint offset to follow player
+	//update viewpoint offset to follow player
 	trans = -(player->origin.x);
 	trans /= aspect;
 	reshape(width, height);
@@ -765,14 +902,32 @@ void idleFunction(void)
 
 	//call redrawing of elements
 	redraw();
+	//this needs to be called on a per-frame basis to keep fmod working
+	fSystem->update();
 }
 
 void initPlayer()
 {
-	//square orig
+	//create the object for the player
 	player = new actor( actor( baseObject::vertex( 0.0f, 0.0f ), .2f*(2.0f/3.0f), .195f));
 }
 
+void initSounds()
+{
+	//init FMOD
+	FMOD::System_Create(&fSystem);// create an instance of the game engine
+	fSystem->init(32, FMOD_INIT_NORMAL, 0);// initialise the game engine with 32 channels
+
+	//load sounds
+	fSystem->createSound("../Assets/Sounds/jump.wav", FMOD_HARDWARE, 0, &soundJump);
+	soundJump->setMode(FMOD_LOOP_OFF);
+
+	fSystem->createSound("../Assets/Sounds/run.mp3", FMOD_HARDWARE, 0, &soundRun);
+	soundRun->setMode(FMOD_LOOP_OFF);
+
+	fSystem->createSound("../Assets/Sounds/ambient.mp3", FMOD_HARDWARE, 0, &soundMusic);
+	soundMusic->setMode(FMOD_LOOP_NORMAL);
+}
 void passiveMouse(int x, int y)
 {
 	//the cursor and the object rendering use different coord systems,
@@ -791,31 +946,63 @@ void passiveMouse(int x, int y)
 
 void updateOutline(int x, int y)
 {
-	passiveMouse( x, y );
-	bDrawOutline = true;
-	mouseX = floor(mouseX * 100.0f)/100.0f;
-	float proximity = fmod( mouseX, .05f );
-	if( abs(proximity) < .025f )
-		mouseX -= proximity;
-	else
-		mouseX >= 0 ? mouseX += .05f - proximity: mouseX += -.05f - proximity;
+	//updates the coordinates that the outline uses, rounds to the nearest .05
+	if( bEditing )
+	{
+		passiveMouse( x, y );
+		bDrawOutline = true;
+		mouseX = floor(mouseX * 100.0f)/100.0f;
+		float proximity = fmod( mouseX, .05f );
+		if( abs(proximity) < .025f )
+			mouseX -= proximity;
+		else
+			mouseX >= 0 ? mouseX += .05f - proximity: mouseX += -.05f - proximity;
 
-	mouseY = floor(mouseY * 100.0f)/100.0f;
-	proximity = fmod( mouseY, .05f );
-	if( abs(proximity) < .025f )
-		mouseY -= proximity;
-	else
-		mouseY >= 0 ? mouseY += .05f - proximity: mouseY += -.05f - proximity;
-	drawWidth = -(clickLoc.x - mouseX);
-	drawCenter.x = clickLoc.x - (clickLoc.x - mouseX)/2;
+		mouseY = floor(mouseY * 100.0f)/100.0f;
+		proximity = fmod( mouseY, .05f );
+		if( abs(proximity) < .025f )
+			mouseY -= proximity;
+		else
+			mouseY >= 0 ? mouseY += .05f - proximity: mouseY += -.05f - proximity;
+		drawWidth = -(clickLoc.x - mouseX);
+		drawCenter.x = clickLoc.x - (clickLoc.x - mouseX)/2;
 
-	drawHeight = -(clickLoc.y - mouseY);
-	drawCenter.y = clickLoc.y - (clickLoc.y - mouseY)/2;
+		drawHeight = -(clickLoc.y - mouseY);
+		drawCenter.y = clickLoc.y - (clickLoc.y - mouseY)/2;
+	}
 }
 
 ground *checkSelected( baseObject::vertex loc )
 {
+	//return the first selected object found (should only be one)
 	for( list<ground>::iterator objItr = groundObjs.begin(); objItr != groundObjs.end(); ++objItr )
+	{
+		if( collision::inObject( loc, *objItr ) )
+		{
+			if( &(*objItr) == selected )
+			{
+				objItr->bSelected = false;
+				return NULL;
+			}
+			else
+			{
+				if( selected != NULL )
+					selected->bSelected = false;
+				objItr->bSelected = true;
+				return &(*objItr);
+			}
+		}
+	}
+	if(selected == NULL) 
+		return NULL;
+	else
+		return selected;
+}
+
+baseObject *checkSelectedMenu( baseObject::vertex loc )
+{
+	//get selected object from menu
+	for( list<baseObject>::iterator objItr = ++(menuItems.begin()); objItr != menuItems.end(); ++objItr )
 	{
 		if( collision::inObject( loc, *objItr ) )
 			return &(*objItr);
@@ -823,9 +1010,10 @@ ground *checkSelected( baseObject::vertex loc )
 	return NULL;
 }
 
-baseObject *checkSelectedMenu( baseObject::vertex loc )
+baseObject *checkSelectedOverlay( baseObject::vertex loc )
 {
-	for( list<baseObject>::iterator objItr = ++(menuItems.begin()); objItr != menuItems.end(); ++objItr )
+	//get selected object from overlay
+	for( list<baseObject>::iterator objItr = overlay.begin(); objItr != overlay.end(); ++objItr )
 	{
 		if( collision::inObject( loc, *objItr ) )
 			return &(*objItr);
@@ -839,11 +1027,18 @@ void mouse(int btn, int state, int x, int y)
 	passiveMouse(x, y);
 	if(btn==GLUT_LEFT_BUTTON && state==GLUT_DOWN) 
 	{
+		//store click location
 		clickLoc.x = mouseX;
 		clickLoc.y = mouseY;
+		//handle menu clicking
 		if( bDrawMenu )
 		{
-			baseObject *selected = checkSelectedMenu( clickLoc );
+			//need to adjust vertex for menu and overlay objects because mouse
+			//	pos is still relative to the window, not the viewport
+			baseObject::vertex adjusted( clickLoc );
+			adjusted.x -= player->origin.x;
+			baseObject *selected = checkSelectedMenu( adjusted );
+			//hande save and load
 			if( selected != NULL && selected->texture == tSave )
 			{
 				OPENFILENAME fm;
@@ -859,47 +1054,68 @@ void mouse(int btn, int state, int x, int y)
 				char str[260];
 				strcpy(str, fm.lpstrFile);
 				string temp = levelReadWrite::readLevel( str, backgroundObjs, foregroundObjs, groundObjs );
-				cout << temp << endl;
 			}
 		}
 		else
 		{
-			ground *selected = checkSelected( clickLoc );
-			if( selected != NULL )
+			selected = checkSelected( clickLoc );
+			if( bEditing )
 			{
-				selected->bSelected = !selected->bSelected;
-				selected->bIsPlatform = !selected->bIsPlatform;
+				//need to adjust vertex for menu and overlay objects because mouse
+				//	pos is still relative to the window, not the viewport
+				baseObject::vertex adjusted( clickLoc );
+				adjusted.x -= player->origin.x;
+				baseObject *overlaySelected = checkSelectedOverlay( adjusted );
+				//if nothing was selected on overlay, check if a ground obj was selected
+				if( overlaySelected != NULL )
+				{
+					for( list<ground>::iterator itr = groundObjs.begin(); itr != groundObjs.end(); ++itr )
+					{
+						if( itr->bSelected )
+						{
+							if( overlaySelected->texture == 290 && selected != NULL )
+								itr->bIsPlatform = !itr->bIsPlatform;
+							else if( overlaySelected->texture >= 900 )
+								itr->texRotation = (float)(overlaySelected->texture/10 % 360);
+							else
+								itr->texture = overlaySelected->texture;
+						}
+					}
+				}
+				//round new position to nearest 0.5
+				mouseX = floor(mouseX * 100.0f)/100.0f;
+				float proximity = fmod( mouseX, .05f );
+				if( abs(proximity) < .025f )
+					mouseX -= proximity;
+				else
+					mouseX >= 0 ? mouseX += .05f - proximity: mouseX += -.05f - proximity;
+
+				mouseY = floor(mouseY * 100.0f)/100.0f;
+				proximity = fmod( mouseY, .05f );
+				if( abs(proximity) < .025f )
+					mouseY -= proximity;
+				else
+					mouseY >= 0 ? mouseY += .05f - proximity: mouseY += -.05f - proximity;
+
+				clickLoc.x = mouseX;
+				clickLoc.y = mouseY;
 			}
-
-			mouseX = floor(mouseX * 100.0f)/100.0f;
-			float proximity = fmod( mouseX, .05f );
-			if( abs(proximity) < .025f )
-				mouseX -= proximity;
-			else
-				mouseX >= 0 ? mouseX += .05f - proximity: mouseX += -.05f - proximity;
-
-			mouseY = floor(mouseY * 100.0f)/100.0f;
-			proximity = fmod( mouseY, .05f );
-			if( abs(proximity) < .025f )
-				mouseY -= proximity;
-			else
-				mouseY >= 0 ? mouseY += .05f - proximity: mouseY += -.05f - proximity;
-	
-			clickLoc.x = mouseX;
-			clickLoc.y = mouseY;
 		}
 	}
 	if(btn==GLUT_LEFT_BUTTON && state==GLUT_UP) 
 	{
-		bDrawOutline = false;
-
-		drawCenter.x = clickLoc.x + drawWidth/2;
-		drawCenter.y = clickLoc.y + drawHeight/2;
-		//prevent accidental creating
-		if( abs(drawWidth) > .025 && abs(drawHeight) > .025 )
+		if( bEditing )
 		{
-			groundObjs.push_back( baseObject( drawCenter, abs(drawWidth), abs(drawHeight) ) );
-			drawWidth = drawHeight = 0.0f;
+			bDrawOutline = false;
+
+			drawCenter.x = clickLoc.x + drawWidth/2;
+			drawCenter.y = clickLoc.y + drawHeight/2;
+			//prevent accidental creating
+			if( abs(drawWidth) > .025 && abs(drawHeight) > .025 )
+			{
+				groundObjs.push_back( baseObject( drawCenter, abs(drawWidth), abs(drawHeight) ) );
+				drawWidth = drawHeight = 0.0f;
+			}
 		}
 	}
 }
@@ -909,13 +1125,14 @@ void loadTextures()
 	srand( (unsigned)time(NULL) );
 
 	//load textures
-	tDirt = loadTexture("../Assets/Textures/dirt.jpg");
+	tDirt = loadTexture("../Assets/Textures/test.png");
 	tSky = loadTexture("../Assets/Textures/sky.jpg");
 	tSkyLower = loadTexture("../Assets/Textures/skyLower.jpg");
 	tPaused = loadTexture("../Assets/Textures/paused.png");
 	tSlide = loadTexture("../Assets/Textures/character/slide/1.png");
 	tLoad = loadTexture("../Assets/Textures/load.png");
 	tSave = loadTexture("../Assets/Textures/save.png");
+	tCheck = loadTexture("../Assets/Textures/check.png");
 
 	for( int i = 1; i <= 4; ++i )
 	{
@@ -924,7 +1141,7 @@ void loadTextures()
 		string location = "../Assets/Textures/character/stand/";
 		location.append(num);
 		location.append(".png");
-		tCharStand[i-1] = loadTexture(location.c_str());
+		tCharStand.push_back(loadTexture(location.c_str()));
 	}
 	for( int i = 1; i <= 8; ++i )
 	{
@@ -933,7 +1150,7 @@ void loadTextures()
 		string location = "../Assets/Textures/character/walk/";
 		location.append(num);
 		location.append(".png");
-		tCharRun[i-1] = loadTexture(location.c_str());
+		tCharRun.push_back(loadTexture(location.c_str()));
 	}
 	for( int i = 1; i <= 5; ++i )
 	{
@@ -942,16 +1159,34 @@ void loadTextures()
 		string location = "../Assets/Textures/character/jump/";
 		location.append(num);
 		location.append(".png");
-		tCharJump[i-1] = loadTexture(location.c_str());
+		tCharJump.push_back(loadTexture(location.c_str()));
+	}
+	for( int i = 1; i <= 4; ++i )
+	{
+		char *num = new char;
+		_itoa( i, num, 10);
+		string location = "../Assets/Textures/character/roll/";
+		location.append(num);
+		location.append(".png");
+		tCharRoll.push_back(loadTexture(location.c_str()));
 	}
 	for( int i = 1; i <= 5; ++i )
 	{
 		char *num = new char;
 		_itoa( i, num, 10);
-		string location = "../Assets/Textures/walls/";
+		string location = "../Assets/Textures/walls/stone/";
 		location.append(num);
 		location.append(".png");
-		tWalls[i-1] = loadTexture(location.c_str());
+		tWallsStone.push_back(loadTexture(location.c_str()));
+	}
+	for( int i = 1; i <= 4; ++i )
+	{
+		char *num = new char;
+		_itoa( i, num, 10);
+		string location = "../Assets/Textures/walls/wood/";
+		location.append(num);
+		location.append(".png");
+		tWallsWood.push_back(loadTexture(location.c_str()));
 	}
 }
 
@@ -966,7 +1201,7 @@ int main(int argc, char** argv)
 	glutReshapeFunc(reshape);
 	glutKeyboardFunc(keyPress);
 	glutKeyboardUpFunc(keyUp);
-	glutSetCursor(GLUT_CURSOR_FULL_CROSSHAIR);
+	glutSetCursor(GLUT_CURSOR_NONE);
 	glutMouseFunc(mouse);
 	glutPassiveMotionFunc( passiveMouse );
 	glutMotionFunc( updateOutline );
@@ -979,6 +1214,9 @@ int main(int argc, char** argv)
 	initMenu();
 	initPlayer();	
 	initObjects();
+	initOverlay();
+	initSounds();
+	fSystem->playSound(FMOD_CHANNEL_FREE, soundMusic, false, 0);
 
 	glutMainLoop();
 	return 0;
