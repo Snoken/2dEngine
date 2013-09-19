@@ -4,7 +4,7 @@
 #include <Windows.h>
 #include <direct.h>
 
-#include "fmod.hpp"
+//#include "fmod.hpp"
 
 #include <string>
 #include <map>
@@ -31,9 +31,9 @@ list<baseObject> overlay;
 map<int, bool> keyMap;
 bool running = false, bEditing = false;
 //FMod Stuff
-FMOD::System     *fSystem; //handle to FMOD engine
-FMOD::Sound      *soundJump, *soundMusic, *soundRun; //sound that will be loaded and played
-FMOD::Channel	 *runChan = NULL;
+//FMOD::System     *fSystem; //handle to FMOD engine
+//FMOD::Sound      *soundJump, *soundMusic, *soundRun; //sound that will be loaded and played
+//FMOD::Channel	 *runChan = NULL;
 
 //global vars
 int width(1600), height(900);
@@ -114,7 +114,7 @@ void initKeyMap()
 
 }
 
-//glut needs this even if it's empty for some reason
+//glut needs this even if it's empty
 void disp(){}
 
 /* Handler for window re-size event. Called back when the window first appears and
@@ -801,9 +801,9 @@ void updatePlayerLocation( const long double & elapsed )
 		}
 		else
 		{
-			if( runChan != NULL )
-				runChan->stop();
-			runChan = NULL;
+			//if( runChan != NULL )
+			//	runChan->stop();
+			//runChan = NULL;
 		}
 		player->updateLocation( elapsed, belowPlayer, abovePlayer, &nearby, &keyMap );
 	}
@@ -882,7 +882,7 @@ void idleFunction(void)
 
 	//call redrawing of elements
 	redraw();
-	fSystem->update();
+//	fSystem->update();
 }
 
 void initPlayer()
@@ -893,7 +893,7 @@ void initPlayer()
 
 void initSounds()
 {
-	//init FMOD
+	/*//init FMOD
 	FMOD::System_Create(&fSystem);// create an instance of the game engine
 	fSystem->init(32, FMOD_INIT_NORMAL, 0);// initialise the game engine with 32 channels
 
@@ -905,7 +905,7 @@ void initSounds()
 	soundRun->setMode(FMOD_LOOP_OFF);
 
 	fSystem->createSound("../Assets/Sounds/ambient.mp3", FMOD_HARDWARE, 0, &soundMusic);
-	soundMusic->setMode(FMOD_LOOP_NORMAL);
+	soundMusic->setMode(FMOD_LOOP_NORMAL);*/
 }
 void passiveMouse(int x, int y)
 {
