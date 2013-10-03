@@ -81,7 +81,7 @@ string levelReadWrite::readLevel(const char* file, list<baseObject> &backgroundO
 	int objType = NONE;
 	int textureType = NONE;
 	float height = 0.0f, width = 0.0f;
-	baseObject::vertex origin( 0.0f, 0.0f );
+	primitives::vertex origin( 0.0f, 0.0f );
 	GLfloat color[4]={1.0f, 1.0f, 1.0f, 1.0f};
 	bool bIsPlatform = false;
 

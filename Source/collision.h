@@ -6,10 +6,10 @@
 namespace collision
 {
 	//check intersection of two lines
-	bool intersecting( baseObject::vertex ends1[2], baseObject::vertex ends2[2], float e );
+	bool intersecting( primitives::vertex ends1[2], primitives::vertex ends2[2], float e );
 
 	//check if vertex is within specified shape
-	bool inObject( baseObject::vertex point, baseObject obj );
+	bool inObject( primitives::vertex point, baseObject obj );
 
 	//check if one object is inside another
 	bool areColliding( baseObject one, baseObject two );

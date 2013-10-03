@@ -21,7 +21,7 @@ void actor::applyGravity( double elapsed )
 	{
 		m_vertSpeed += (float)elapsed * -9.8f; //accel of gravity
 		origin.y += m_vertSpeed * (float)elapsed;
-		for( list<baseObject::vertex>::iterator itr = points.begin(); itr != points.end(); ++itr )
+		for( list<primitives::vertex>::iterator itr = points.begin(); itr != points.end(); ++itr )
 		{
 			itr->y += m_vertSpeed * (float)elapsed;
 		}
@@ -46,7 +46,7 @@ void actor::moveByTimeX( long double elapsed )
 	else
 		difX = m_runSpeed*(float)elapsed * (GLfloat)m_multiplier;
 	this->origin.x += difX;
-	for( list<vertex>::iterator itr = points.begin(); itr != points.end(); ++itr )
+	for( list<primitives::vertex>::iterator itr = points.begin(); itr != points.end(); ++itr )
 		itr->x += difX;
 	setMaxMin();
 }
@@ -54,7 +54,7 @@ void actor::moveByTimeX( long double elapsed )
 void actor::moveByTimeY( float time )
 {
 	origin.y += m_vertSpeed * (float)time;
-	for( list<baseObject::vertex>::iterator itr = points.begin(); itr != points.end(); ++itr )
+	for( list<primitives::vertex>::iterator itr = points.begin(); itr != points.end(); ++itr )
 		itr->y += m_vertSpeed * (float)time;
 	setMaxMin();
 	m_bOnGround = true;
@@ -65,7 +65,7 @@ void actor::moveByDistanceX( float distance )
 {
 	GLfloat difX = distance;
 	this->origin.x += difX;
-	for( list<vertex>::iterator itr = points.begin(); itr != points.end(); ++itr )
+	for( list<primitives::vertex>::iterator itr = points.begin(); itr != points.end(); ++itr )
 		itr->x += difX;
 	setMaxMin();
 }
@@ -74,7 +74,7 @@ void actor::moveByDistanceY( float distance )
 {
 	GLfloat difY = distance;
 	this->origin.y += difY;
-	for( list<vertex>::iterator itr = points.begin(); itr != points.end(); ++itr )
+	for (list<primitives::vertex>::iterator itr = points.begin(); itr != points.end(); ++itr)
 		itr->y += difY;
 	setMaxMin();
 }
@@ -120,7 +120,7 @@ void actor::updateLocation( const long double & elapsed, ground *belowPlayer,
 	if( m_vertSpeed < 0.0f && m_fallStart == 999.99f )
 		m_fallStart = origin.y;
 
-	baseObject::vertex below( origin.x, yMin - .02f );
+	primitives::vertex below( origin.x, yMin - .02f );
 	if( belowPlayer != NULL && !(collision::inObject( below, *belowPlayer ) && m_vertSpeed >= 0.0f) )
 	{
 		if( m_bOnGround )
@@ -336,7 +336,7 @@ bool actor::facing( const baseObject &one )
 
 void actor::changeHeight( float newH )
 {
-	for( list<vertex>::iterator itr = points.begin(); itr != points.end(); ++itr )
+	for (list<primitives::vertex>::iterator itr = points.begin(); itr != points.end(); ++itr)
 	{
 		if( itr->y == yMax )
 			itr->y = yMin+newH;

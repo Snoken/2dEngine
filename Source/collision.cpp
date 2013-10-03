@@ -1,6 +1,6 @@
 #include "collision.h"
 
-bool collision::intersecting( baseObject::vertex ends1[2], baseObject::vertex ends2[2], float e )
+bool collision::intersecting( primitives::vertex ends1[2], primitives::vertex ends2[2], float e )
 {
 	float a1 = ends1[1].y - ends1[0].y;
 	float b1 = ends1[0].x - ends1[1].x;
@@ -21,7 +21,7 @@ bool collision::intersecting( baseObject::vertex ends1[2], baseObject::vertex en
 	return true;
 }
 
-bool collision::inObject( baseObject::vertex point, baseObject obj )
+bool collision::inObject( primitives::vertex point, baseObject obj )
 {
 	if (point.x < obj.xMin || point.x > obj.xMax || point.y < obj.yMin || point.y > obj.yMax) {
 		// Definitely not within the polygon!
@@ -34,16 +34,16 @@ bool collision::inObject( baseObject::vertex point, baseObject obj )
 	float e = ((obj.xMax - obj.xMin) / 100);
 
 	//points of ray to test
-	baseObject::vertex rayPoints[2] = {baseObject::vertex(obj.xMin-e, point.y), 
-		baseObject::vertex( point.x, point.y )};
+	primitives::vertex rayPoints[2] = {primitives::vertex(obj.xMin-e, point.y), 
+		primitives::vertex( point.x, point.y )};
 
 	//start on second object so we're sure there's at least two points
-	for( list<baseObject::vertex>::iterator p2 = ++(obj.points.begin()); p2 != obj.points.end(); ++p2 )
+	for( list<primitives::vertex>::iterator p2 = ++(obj.points.begin()); p2 != obj.points.end(); ++p2 )
 	{
-		list<baseObject::vertex>::iterator p1 = p2;
+		list<primitives::vertex>::iterator p1 = p2;
 		--p1;
-		baseObject::vertex linePoints[2] = { baseObject::vertex(p1->x, p1->y), 
-			baseObject::vertex(p2->x, p2->y) };
+		primitives::vertex linePoints[2] = { primitives::vertex(p1->x, p1->y), 
+			primitives::vertex(p2->x, p2->y) };
 		if( intersecting(rayPoints,linePoints, e) )
 			return true;
 	}
@@ -53,7 +53,7 @@ bool collision::inObject( baseObject::vertex point, baseObject obj )
 
 bool collision::areColliding( baseObject one, baseObject two )
 {
-	for( list<baseObject::vertex>::iterator itrOne = one.points.begin(); itrOne != one.points.end(); ++itrOne )
+	for( list<primitives::vertex>::iterator itrOne = one.points.begin(); itrOne != one.points.end(); ++itrOne )
 	{
 		if( inObject( *itrOne, two ) )
 			return true;

@@ -2,18 +2,13 @@
 #define BASEOBJECT_H
 #include <list>
 #include <gl/freeglut.h>
+#include "primitives.h"
 
 using namespace std;
 class baseObject
 {
 public:
-	struct vertex{
-		GLfloat x, y;
-		vertex( GLfloat x, GLfloat y):
-		x(x), y(y){}
-			vertex():x(0.0f), y(0.0f){}
-	};
-	list<vertex> points;
+	list<primitives::vertex> points;
 	GLfloat color[4];
 	GLfloat xMax, yMax, xMin, yMin, width, height;
 	GLuint texture;
@@ -22,7 +17,7 @@ public:
 
 	void setMaxMin()
 	{
-		list<vertex>::iterator itr = points.begin();
+		list<primitives::vertex>::iterator itr = points.begin();
 		xMax = xMin = itr->x;
 		yMax = yMin = itr->y;
 		for( ; itr != points.end(); ++itr )
@@ -46,38 +41,38 @@ public:
 		for( int i = 0; i < 4; ++i )
 			color[i] = 1.0f;
 	}
-	baseObject( vertex origin, list<vertex> points ):
+	baseObject( primitives::vertex origin, list<primitives::vertex> points ):
 		origin(origin), points(points)
 	{
 		init();
 	}
-	baseObject( vertex origin, list<vertex> points, GLfloat color[4] ): origin(origin)
+	baseObject( primitives::vertex origin, list<primitives::vertex> points, GLfloat color[4] ): origin(origin)
 	{
 		*this = baseObject( origin, points );
 		for( int i = 0; i < 4; ++i )
 			this->color[i] = color[i];
 	}
-	baseObject( vertex origin, float width, float height, GLfloat color[4] ): origin(origin)
+	baseObject( primitives::vertex origin, float width, float height, GLfloat color[4] ): origin(origin)
 	{
-		points.push_back(vertex(origin.x - width/2, origin.y - height/2));
-		points.push_back(vertex(origin.x - width/2, origin.y + height/2));
-		points.push_back(vertex(origin.x + width/2, origin.y + height/2));
-		points.push_back(vertex(origin.x + width/2, origin.y - height/2));
+		points.push_back(primitives::vertex(origin.x - width/2, origin.y - height/2));
+		points.push_back(primitives::vertex(origin.x - width/2, origin.y + height/2));
+		points.push_back(primitives::vertex(origin.x + width/2, origin.y + height/2));
+		points.push_back(primitives::vertex(origin.x + width/2, origin.y - height/2));
 		init();
 		for( int i = 0; i < 4; ++i )
 			this->color[i] = color[i];
 	}
-	baseObject( vertex origin, list<vertex> points, GLuint texture ): origin(origin)
+	baseObject( primitives::vertex origin, list<primitives::vertex> points, GLuint texture ): origin(origin)
 	{
 		*this = baseObject( origin, points );
 		this->texture = texture;
 	}
-	baseObject( vertex origin, float width, float height, GLuint texture = 0 ): origin(origin)
+	baseObject( primitives::vertex origin, float width, float height, GLuint texture = 0 ): origin(origin)
 	{
-		points.push_back(vertex(origin.x - width/2, origin.y - height/2));
-		points.push_back(vertex(origin.x - width/2, origin.y + height/2));
-		points.push_back(vertex(origin.x + width/2, origin.y + height/2));
-		points.push_back(vertex(origin.x + width/2, origin.y - height/2));
+		points.push_back(primitives::vertex(origin.x - width/2, origin.y - height/2));
+		points.push_back(primitives::vertex(origin.x - width/2, origin.y + height/2));
+		points.push_back(primitives::vertex(origin.x + width/2, origin.y + height/2));
+		points.push_back(primitives::vertex(origin.x + width/2, origin.y - height/2));
 		init();
 		this->texture = texture;
 	}
@@ -90,6 +85,6 @@ public:
 		return returnMe;
 	}
 
-	vertex origin;
+	primitives::vertex origin;
 };
 #endif

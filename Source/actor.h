@@ -38,12 +38,12 @@ public:
 		m_climbAngle = 45.0f;
 		m_lastRollTime = 0;
 	}
-	actor(vertex origin, list<vertex> points):baseObject(origin, points)
+	actor(primitives::vertex origin, list<primitives::vertex> points):baseObject(origin, points)
 	{
 		init();
 	}
 
-	actor(vertex origin, list<vertex> points, GLfloat color[4] ):baseObject(origin, points, color)
+	actor(primitives::vertex origin, list<primitives::vertex> points, GLfloat color[4] ):baseObject(origin, points, color)
 	{
 		init();
 	}
@@ -54,7 +54,7 @@ public:
 		*this = old;
 		m_bOnGround = old.m_bOnGround;
 	}
-	actor( vertex origin, float width, float height, GLuint texture = 0 ):baseObject(origin, width, height, texture)
+	actor( primitives::vertex origin, float width, float height, GLuint texture = 0 ):baseObject(origin, width, height, texture)
 	{
 		init();
 	}
