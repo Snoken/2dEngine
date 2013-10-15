@@ -3,13 +3,14 @@
 #include "actor.h"
 #include "ground.h"
 #include "prop.h"
-#include <gl/freeglut.h>
-#include "soil\SOIL.h"
+#include <GL/freeglut.h>
+#include "soil/SOIL.h"
 #include <vector>
 #include <time.h>
 #include <iostream>
 #include "primitives.h"
 #include "selection.h"
+#include <cmath>
 
 class scene
 {

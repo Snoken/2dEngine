@@ -3,9 +3,13 @@
 #include "baseObject.h"
 #include "ground.h"
 #include "collision.h"
-#include <Windows.h>
-#include <MMSystem.h>
+#include <cmath>
 #include <map>
+
+#ifdef WIN32
+	#include <Windows.h>
+	#include <MMSystem.h>
+#endif
 
 using namespace std;
 class actor : public baseObject

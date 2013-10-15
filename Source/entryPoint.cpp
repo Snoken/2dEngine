@@ -1,7 +1,7 @@
 #define _CRT_SECURE_NO_DEPRECATE
-#include "soil\SOIL.h"
-
-#include "fmod/fmod.hpp"
+#include "soil/SOIL.h"
+#include "GL/freeglut.h"
+#include "GL/glut.h"
 
 #include <string>
 #include <map>
@@ -17,6 +17,10 @@
 #include "levelReadWrite.h"
 #include "scene.h"
 #include "inputHandler.h"
+#include "fmodex/fmod.hpp"
+#include "fmodex/fmod.h"
+
+#define LIBGL_ALWAYS_SOFTWARE = 1
 
 using namespace std;
 
@@ -138,7 +142,11 @@ void updatePlayerLocation( const long double & elapsed )
 		if (mainScene->getPlayer()->getMult() != 0.0 && mainScene->getPlayer()->m_bOnGround)
 		{
 			if( runChan == NULL )
+				#ifdef WIN32
 				fSystem->playSound(soundRun, 0, false, &runChan);
+                        	#else
+                                fSystem->playSound(FMOD_CHANNEL_FREE, soundRun, false, &runChan);
+                        	#endif
 		}
 		else
 		{
@@ -147,7 +155,7 @@ void updatePlayerLocation( const long double & elapsed )
 			runChan = NULL;
 		}
 		mainScene->getPlayer()->updateLocation(elapsed, belowPlayer, abovePlayer, 
-			&nearby, &input.getKeyMap());
+			&nearby, input.getKeyMap());
 	}
 }
 
@@ -266,7 +274,11 @@ int main(int argc, char** argv)
 
 	mainScene = new scene(aspect);
 	initSounds();
-	fSystem->playSound(soundMusic, 0, false, 0);
+	#ifdef WIN32
+		fSystem->playSound(soundMusic, 0, false, 0);
+       	#else
+                fSystem->playSound(FMOD_CHANNEL_FREE, soundMusic, false, 0);
+       	#endif
 
 	glutMainLoop();
 	return 0;

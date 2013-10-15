@@ -11,8 +11,8 @@ class selection
 {
 public:
 	static ground* checkSelected(primitives::vertex loc, list<ground> &groundObjs, const bool &bEditing);
-	static baseObject* selection::checkSelectedMenu(primitives::vertex loc, list<baseObject> &menuItems);
-	static baseObject* selection::checkSelectedOverlay(primitives::vertex loc, list<baseObject> &overlay);
+	static baseObject* checkSelectedMenu(primitives::vertex loc, list<baseObject> &menuItems);
+	static baseObject* checkSelectedOverlay(primitives::vertex loc, list<baseObject> &overlay);
 };
 
 #endif

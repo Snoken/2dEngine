@@ -1,7 +1,7 @@
 #ifndef PRIMITIVES_H
 #define PRIMITIVES_H
 #include <iostream>
-#include "GL\freeglut.h"
+#include "GL/freeglut.h"
 
 namespace primitives {
 	struct vertex{

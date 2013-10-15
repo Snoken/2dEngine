@@ -1,7 +1,7 @@
 #ifndef BASEOBJECT_H
 #define BASEOBJECT_H
 #include <list>
-#include <gl/freeglut.h>
+#include <GL/freeglut.h>
 #include "primitives.h"
 
 using namespace std;

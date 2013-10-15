@@ -210,7 +210,6 @@ void scene::loadTextures()
 	srand((unsigned) time(NULL));
 
 	//load textures
-	tDirt = 0;
 	tDirt = loadTexture("../Assets/Textures/test.png");
 	tSky = loadTexture("../Assets/Textures/sky.jpg");
 	tSkyLower = loadTexture("../Assets/Textures/skyLower.jpg");
@@ -222,8 +221,8 @@ void scene::loadTextures()
 
 	for (int i = 1; i <= 4; ++i)
 	{
-		char* num = new char;
-		_itoa(i, num, 10);
+		char num[1];
+		snprintf(num, 10, "%d", i);
 		string location = "../Assets/Textures/character/stand/";
 		location.append(num);
 		location.append(".png");
@@ -232,7 +231,7 @@ void scene::loadTextures()
 	for (int i = 1; i <= 8; ++i)
 	{
 		char* num = new char;
-		_itoa(i, num, 10);
+		snprintf(num, 10, "%d", i);
 		string location = "../Assets/Textures/character/walk/";
 		location.append(num);
 		location.append(".png");
@@ -241,7 +240,7 @@ void scene::loadTextures()
 	for (int i = 1; i <= 5; ++i)
 	{
 		char* num = new char;
-		_itoa(i, num, 10);
+		snprintf(num, 10, "%d", i);
 		string location = "../Assets/Textures/character/jump/";
 		location.append(num);
 		location.append(".png");
@@ -250,7 +249,7 @@ void scene::loadTextures()
 	for (int i = 1; i <= 4; ++i)
 	{
 		char* num = new char;
-		_itoa(i, num, 10);
+		snprintf(num, 10, "%d", i);
 		string location = "../Assets/Textures/character/roll/";
 		location.append(num);
 		location.append(".png");
@@ -259,7 +258,7 @@ void scene::loadTextures()
 	for (int i = 1; i <= 5; ++i)
 	{
 		char* num = new char;
-		_itoa(i, num, 10);
+		snprintf(num, 10, "%d", i);
 		string location = "../Assets/Textures/walls/stone/";
 		location.append(num);
 		location.append(".png");
@@ -268,7 +267,7 @@ void scene::loadTextures()
 	for (int i = 1; i <= 4; ++i)
 	{
 		char* num = new char;
-		_itoa(i, num, 10);
+		snprintf(num, 10, "%d", i);
 		string location = "../Assets/Textures/walls/wood/";
 		location.append(num);
 		location.append(".png");

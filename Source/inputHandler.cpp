@@ -80,7 +80,11 @@ void inputHandler::processKeys(scene &mainScene, const bool& bEditing, const lon
 	{
 		if (player->m_bOnGround)
 		{
-			fSystem->playSound(soundJump, 0, false, 0);
+			#ifdef WIN32
+				fSystem->playSound(soundJump, 0, false, 0);
+			#else
+				fSystem->playSound(FMOD_CHANNEL_FREE, soundJump, false, 0);
+			#endif
 			player->jump();
 		}
 	}
@@ -96,19 +100,29 @@ void inputHandler::mouseDown(scene &mainScene, const bool &bDrawMenu, const bool
 		baseObject *selected = selection::checkSelectedMenu(adjusted, *mainScene.getMenu());
 		if (selected != NULL && selected->texture == mainScene.tSave)
 		{
-			OPENFILENAME fm;
-			getFileWin(fm);
-			char str[260];
-			strcpy_s(str, fm.lpstrFile);
+			#ifdef WIN32
+				OPENFILENAME fm;
+				getFileWin(fm);
+				char str[260];
+				strcpy_s(str, fm.lpstrFile);
+			#else
+				//TODO: Implement linux file handler
+				char str[]="empty";
+			#endif
 			levelReadWrite::writeLevel(str, *mainScene.getBg(), 
 				*mainScene.getFg(), *mainScene.getGround());
 		}
 		else if (selected != NULL && selected->texture == mainScene.tLoad)
 		{
-			OPENFILENAME fm;
-			getFileWin(fm);
-			char str[260];
-			strcpy_s(str, fm.lpstrFile);
+			#ifdef WIN32
+				OPENFILENAME fm;
+				getFileWin(fm);
+				char str[260];
+				strcpy_s(str, fm.lpstrFile);
+			#else
+				//TODO: Implement linux file handler
+				char str[]="empty";
+			#endif
 			string result = levelReadWrite::readLevel(str, *mainScene.getBg(),
 				*mainScene.getFg(), *mainScene.getGround());
 			if (result != "success")
@@ -179,6 +193,7 @@ void inputHandler::mouseUp(scene &mainScene)
 	}
 }
 
+#ifdef WIN32
 void inputHandler::getFileWin(OPENFILENAME & ofn)
 {
 	char szFile[260];       // buffer for file name
@@ -205,3 +220,4 @@ void inputHandler::getFileWin(OPENFILENAME & ofn)
 	// Display the Open dialog box. 
 	GetOpenFileName(&ofn);
 }
+#endif
