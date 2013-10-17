@@ -1,19 +1,20 @@
 #ifndef INPUTHANDLER_H
 #define INPUTHANDLER_H
 
-#ifdef WIN32
+#define WIN = WIN32 || WIN64
+#ifdef WIN
 	#include <Windows.h>
-	#include <Commdlg.h>
 	#include <direct.h>
+	#include "fmod/fmod.hpp"
+	#include <Commdlg.h>
+#else
+	#include "fmodex/fmod.hpp"
 #endif
-
-#include "fmodex/fmod.hpp"
 #include <map>
 #include "scene.h"
 #include "primitives.h"
 #include "levelReadWrite.h"
 #include <cmath>
-
 using namespace std;
 
 class inputHandler
@@ -42,7 +43,7 @@ private:
 #ifdef WIN32
 	void getFileWin(OPENFILENAME & ofn);
 #endif
-	primitives::vertex clickLoc, drawCenter;
+	primitives::vertex drawCenter;
 };
 
 #endif

@@ -19,5 +19,8 @@ namespace collision
 	bool below( baseObject one, baseObject two );
 
 	bool nextTo( baseObject one, baseObject two );
+
+	//returns true if one is left of two
+	bool leftOf(baseObject one, baseObject two);
 }
 #endif

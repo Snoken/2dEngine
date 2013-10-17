@@ -159,6 +159,7 @@
     <ClInclude Include="levelReadWrite.h" />
     <ClInclude Include="physics.h" />
     <ClInclude Include="primitives.h" />
+    <ClInclude Include="projectile.h" />
     <ClInclude Include="prop.h" />
     <ClInclude Include="scene.h" />
     <ClInclude Include="selection.h" />

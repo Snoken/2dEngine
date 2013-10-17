@@ -5,7 +5,7 @@ void scene::redraw(bool& bEditing, bool& bDrawOutline, bool& bDrawMenu)
 	glClear(GL_COLOR_BUFFER_BIT);
 
 	//each draw call is essentially a layer, the first call is the furthest back
-	drawSky();
+	//drawSky();
 	drawBackground(bEditing);
 	drawGround(bEditing);
 	if (bEditing)
@@ -30,21 +30,21 @@ void scene::drawGrid()
 	glColor4f(1.0f, 1.0f, 1.0f, 0.25f);
 	for (float x = 0.0f; x < 100.0f; x += .05f)
 	{
-		glVertex2f(x, 1.0f);
-		glVertex2f(x, -1.0f);
+		glVertex2f(x, 1.0f / m_zoom);
+		glVertex2f(x, -1.0f / m_zoom);
 	}
 	for (float x = -0.05f; x > -100.0f; x -= .05f)
 	{
-		glVertex2f(x, 1.0f);
-		glVertex2f(x, -1.0f);
+		glVertex2f(x, 1.0f / m_zoom);
+		glVertex2f(x, -1.0f / m_zoom);
 	}
 
-	for (float y = 0.0f; y < 1; y += .05f)
+	for (float y = 0.0f; y < 1 / m_zoom; y += .05f)
 	{
 		glVertex2f(-100, y);
 		glVertex2f(100, y);
 	}
-	for (float y = -0.05f; y > -1; y -= .05f)
+	for (float y = -0.05f; y > -1 / m_zoom; y -= .05f)
 	{
 		glVertex2f(-100, y);
 		glVertex2f(100, y);
@@ -154,10 +154,10 @@ void scene::drawMenu()
 	glColor4f(0.0f, 0.0f, 0.0f, 0.9f);
 	//faded black overlay
 	glBegin(GL_QUADS);
-	glVertex2f(itr->xMin + player->origin.x, itr->yMin);
-	glVertex2f(itr->xMin + player->origin.x, itr->yMax);
-	glVertex2f(itr->xMax + player->origin.x, itr->yMax);
-	glVertex2f(itr->xMax + player->origin.x, itr->yMin);
+	glVertex2f((itr->xMin + player->origin.x) / m_zoom, itr->yMin / m_zoom);
+	glVertex2f((itr->xMin + player->origin.x) / m_zoom, itr->yMax / m_zoom);
+	glVertex2f((itr->xMax + player->origin.x) / m_zoom, itr->yMax / m_zoom);
+	glVertex2f((itr->xMax + player->origin.x) / m_zoom, itr->yMin / m_zoom);
 	glEnd();
 	++itr;
 
@@ -169,10 +169,10 @@ void scene::drawMenu()
 		glBindTexture(GL_TEXTURE_2D, itr->texture);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		glBegin(GL_QUADS);
-		glTexCoord2f(0.0f, 0.0f); glVertex2f(itr->xMin + player->origin.x, itr->yMin);
-		glTexCoord2f(0.0f, 1.0f); glVertex2f(itr->xMin + player->origin.x, itr->yMax);
-		glTexCoord2f(1.0f, 1.0f); glVertex2f(itr->xMax + player->origin.x, itr->yMax);
-		glTexCoord2f(1.0f, 0.0f); glVertex2f(itr->xMax + player->origin.x, itr->yMin);
+		glTexCoord2f(0.0f, 0.0f); glVertex2f((itr->xMin + player->origin.x) / m_zoom, itr->yMin / m_zoom);
+		glTexCoord2f(0.0f, 1.0f); glVertex2f((itr->xMin + player->origin.x) / m_zoom, itr->yMax / m_zoom);
+		glTexCoord2f(1.0f, 1.0f); glVertex2f((itr->xMax + player->origin.x) / m_zoom, itr->yMax / m_zoom);
+		glTexCoord2f(1.0f, 0.0f); glVertex2f((itr->xMax + player->origin.x) / m_zoom, itr->yMin / m_zoom);
 		glEnd();
 	}
 	glDisable(GL_TEXTURE_2D);
@@ -180,17 +180,10 @@ void scene::drawMenu()
 
 void scene::drawSky()
 {
-	glEnable(GL_TEXTURE_2D);
-	glColor3ub(255, 255, 255);
-	//big backdrop
-	glBindTexture(GL_TEXTURE_2D, tSky);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glBegin(GL_QUADS);
-	glTexCoord2f(0.0f, 0.0f); glVertex2f(-m_aspect + player->origin.x, -1.0);
-	glTexCoord2f(0.0f, 1.0f); glVertex2f(-m_aspect + player->origin.x, 1.0);
-	glTexCoord2f(m_aspect / 0.1f, 1.0f); glVertex2f(m_aspect + player->origin.x, 1.0);
-	glTexCoord2f(m_aspect / 0.1f, 0.0f); glVertex2f(m_aspect + player->origin.x, -1.0);
-	glEnd();
+	//glEnable(GL_TEXTURE_2D);
+	//glColor3ub(255, 255, 255);
+	//TODO: implement clouds
+	//glEnd();
 }
 
 GLuint scene::loadTexture(const char * filename)
@@ -210,7 +203,7 @@ void scene::loadTextures()
 	srand((unsigned) time(NULL));
 
 	//load textures
-	tDirt = loadTexture("../Assets/Textures/test.png");
+	tDirtUpper = loadTexture("../Assets/Textures/platforms/dirt.png");
 	tSky = loadTexture("../Assets/Textures/sky.jpg");
 	tSkyLower = loadTexture("../Assets/Textures/skyLower.jpg");
 	tPaused = loadTexture("../Assets/Textures/paused.png");
@@ -221,8 +214,8 @@ void scene::loadTextures()
 
 	for (int i = 1; i <= 4; ++i)
 	{
-		char num[1];
-		snprintf(num, 10, "%d", i);
+		char* num = new char;
+		snprintf(num, sizeof(int), "%d", i);
 		string location = "../Assets/Textures/character/stand/";
 		location.append(num);
 		location.append(".png");
@@ -231,7 +224,7 @@ void scene::loadTextures()
 	for (int i = 1; i <= 8; ++i)
 	{
 		char* num = new char;
-		snprintf(num, 10, "%d", i);
+		snprintf(num, sizeof(int), "%d", i);
 		string location = "../Assets/Textures/character/walk/";
 		location.append(num);
 		location.append(".png");
@@ -240,7 +233,7 @@ void scene::loadTextures()
 	for (int i = 1; i <= 5; ++i)
 	{
 		char* num = new char;
-		snprintf(num, 10, "%d", i);
+		snprintf(num, sizeof(int), "%d", i);
 		string location = "../Assets/Textures/character/jump/";
 		location.append(num);
 		location.append(".png");
@@ -249,7 +242,7 @@ void scene::loadTextures()
 	for (int i = 1; i <= 4; ++i)
 	{
 		char* num = new char;
-		snprintf(num, 10, "%d", i);
+		snprintf(num, sizeof(int), "%d", i);
 		string location = "../Assets/Textures/character/roll/";
 		location.append(num);
 		location.append(".png");
@@ -258,7 +251,7 @@ void scene::loadTextures()
 	for (int i = 1; i <= 5; ++i)
 	{
 		char* num = new char;
-		snprintf(num, 10, "%d", i);
+		snprintf(num, sizeof(int), "%d", i);
 		string location = "../Assets/Textures/walls/stone/";
 		location.append(num);
 		location.append(".png");
@@ -267,7 +260,7 @@ void scene::loadTextures()
 	for (int i = 1; i <= 4; ++i)
 	{
 		char* num = new char;
-		snprintf(num, 10, "%d", i);
+		snprintf(num, sizeof(int), "%d", i);
 		string location = "../Assets/Textures/walls/wood/";
 		location.append(num);
 		location.append(".png");
@@ -444,45 +437,45 @@ void scene::drawCursor()
 {
 	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 	glBegin(GL_LINES);
-	glVertex2f(m_mouseLoc.x - .025f, m_mouseLoc.y);
-	glVertex2f(m_mouseLoc.x + .025f, m_mouseLoc.y);
+	glVertex2f((m_mouseLoc.x - .025f) / m_zoom, m_mouseLoc.y / m_zoom);
+	glVertex2f((m_mouseLoc.x + .025f) / m_zoom, m_mouseLoc.y / m_zoom);
 
-	glVertex2f(m_mouseLoc.x, m_mouseLoc.y - .025f);
-	glVertex2f(m_mouseLoc.x, m_mouseLoc.y + .025f);
+	glVertex2f(m_mouseLoc.x / m_zoom, (m_mouseLoc.y + .025f) / m_zoom);
+	glVertex2f(m_mouseLoc.x / m_zoom, (m_mouseLoc.y - .025f) / m_zoom);
 	glEnd();
 }
 
 void scene::drawOverlay()
 {
 	float gap = .015f, sqWidth = .09f, startX = 0,
-		overWidth = .505f, startY = .395f, offset = player->origin.x;
+		overWidth = .505f, startY = .395f, offset = player->origin.x*m_zoom;
 	glColor4f(0, 0, 0, 0.9f);
 	glBegin(GL_QUADS);
-	glVertex2f(m_aspect + offset, 1);
-	glVertex2f(m_aspect + offset, -1);
-	glVertex2f(m_aspect - overWidth + offset, -1);
-	glVertex2f(m_aspect - overWidth + offset, 1);
+	glVertex2f((m_aspect + offset) / m_zoom, 1 / m_zoom);
+	glVertex2f((m_aspect + offset) / m_zoom, -1 / m_zoom);
+	glVertex2f((m_aspect - overWidth + offset) / m_zoom, -1 / m_zoom);
+	glVertex2f((m_aspect - overWidth + offset) / m_zoom, 1 / m_zoom);
 
 	//sidebar
 	glColor4f(1, 1, 1, 1);
-	glVertex2f(m_aspect - overWidth + offset, 1);
-	glVertex2f(m_aspect - overWidth + offset, -1);
-	glVertex2f(m_aspect - overWidth - .005f + offset, -1);
-	glVertex2f(m_aspect - overWidth - .005f + offset, 1);
+	glVertex2f((m_aspect - overWidth + offset) / m_zoom, 1 / m_zoom);
+	glVertex2f((m_aspect - overWidth + offset) / m_zoom, -1 / m_zoom);
+	glVertex2f((m_aspect - overWidth - .005f + offset) / m_zoom, -1 / m_zoom);
+	glVertex2f((m_aspect - overWidth - .005f + offset) / m_zoom, 1 / m_zoom);
 
 	glEnd();
 
 	glColor4f(1, 1, 1, 1);
 	string temp = "Textures";
-	glRasterPos2f(m_aspect - .325f + offset, .925f);
+	glRasterPos2f((m_aspect - .325f + offset) / m_zoom, .925f / m_zoom);
 	glutBitmapString(GLUT_BITMAP_HELVETICA_18, (unsigned char*) temp.c_str());
 
 	temp = "Stone";
-	glRasterPos2f(m_aspect - .0925f + offset, .885f);
+	glRasterPos2f((m_aspect - .0925f + offset) / m_zoom, .885f / m_zoom);
 	glutBitmapString(GLUT_BITMAP_HELVETICA_10, (unsigned char*) temp.c_str());
 
 	temp = "Wood";
-	glRasterPos2f(m_aspect - .1825f + offset, .885f);
+	glRasterPos2f((m_aspect - .1825f + offset) / m_zoom, .885f / m_zoom);
 	glutBitmapString(GLUT_BITMAP_HELVETICA_10, (unsigned char*) temp.c_str());
 
 	glEnable(GL_TEXTURE_2D);
@@ -492,39 +485,39 @@ void scene::drawOverlay()
 	{
 		glBindTexture(GL_TEXTURE_2D, itr->texture);
 		glBegin(GL_QUADS);
-		glTexCoord2f(0, 0); glVertex2f(itr->xMin + offset, itr->yMin);
-		glTexCoord2f(0, 1); glVertex2f(itr->xMin + offset, itr->yMax);
-		glTexCoord2f(1, 1); glVertex2f(itr->xMax + offset, itr->yMax);
-		glTexCoord2f(1, 0); glVertex2f(itr->xMax + offset, itr->yMin);
+		glTexCoord2f(0, 0); glVertex2f((itr->xMin + offset) / m_zoom, itr->yMin / m_zoom);
+		glTexCoord2f(0, 1); glVertex2f((itr->xMin + offset) / m_zoom, itr->yMax / m_zoom);
+		glTexCoord2f(1, 1); glVertex2f((itr->xMax + offset) / m_zoom, itr->yMax / m_zoom);
+		glTexCoord2f(1, 0); glVertex2f((itr->xMax + offset) / m_zoom, itr->yMin / m_zoom);
 		glEnd();
 	}
 	glDisable(GL_TEXTURE_2D);
 	temp = "Rotation:";
-	glRasterPos2f(m_aspect - .485f + offset, .355f);
+	glRasterPos2f((m_aspect - .485f + offset) / m_zoom, .355f / m_zoom);
 	glutBitmapString(GLUT_BITMAP_HELVETICA_12, (unsigned char*) temp.c_str());
 
 	while (itr != overlay.end())
 	{
 		glBegin(GL_QUADS);
 		glColor4f(1, 1, 1, 1);
-		glVertex2f(itr->xMin + offset, itr->yMin);
-		glVertex2f(itr->xMin + offset, itr->yMax);
-		glVertex2f(itr->xMax + offset, itr->yMax);
-		glVertex2f(itr->xMax + offset, itr->yMin);
+		glVertex2f((itr->xMin + offset) / m_zoom, itr->yMin / m_zoom);
+		glVertex2f((itr->xMin + offset) / m_zoom, itr->yMax / m_zoom);
+		glVertex2f((itr->xMax + offset) / m_zoom, itr->yMax / m_zoom);
+		glVertex2f((itr->xMax + offset) / m_zoom, itr->yMin / m_zoom);
 		glEnd();
 		if (itr->texture == 290)
 		{
-			//TODO: re-work selections to get rid of this pointer bullshit, possibly use
+			//TODO: re-work selections to get rid of this pointer stuff, possibly use
 			//	std::set, will need some sort of hashing function to sort by
 			if (selected != NULL && selected->bIsPlatform)
 			{
 				glEnable(GL_TEXTURE_2D);
 				glBindTexture(GL_TEXTURE_2D, tCheck);
 				glBegin(GL_QUADS);
-				glTexCoord2f(0, 0); glVertex2f(itr->xMin + offset - .01f, itr->yMin - .01f);
-				glTexCoord2f(0, 1); glVertex2f(itr->xMin + offset - .01f, itr->yMax + .01f);
-				glTexCoord2f(1, 1); glVertex2f(itr->xMax + offset + .01f, itr->yMax + .01f);
-				glTexCoord2f(1, 0); glVertex2f(itr->xMax + offset + .01f, itr->yMin - .01f);
+				glTexCoord2f(0, 0); glVertex2f((itr->xMin + offset - .01f) / m_zoom, (itr->yMin - .01f) / m_zoom);
+				glTexCoord2f(0, 1); glVertex2f((itr->xMin + offset - .01f) / m_zoom, (itr->yMax + .01f) / m_zoom);
+				glTexCoord2f(1, 1); glVertex2f((itr->xMax + offset + .01f) / m_zoom, (itr->yMax + .01f) / m_zoom);
+				glTexCoord2f(1, 0); glVertex2f((itr->xMax + offset + .01f) / m_zoom, (itr->yMin - .01f) / m_zoom);
 				glEnd();
 				glDisable(GL_TEXTURE_2D);
 			}
@@ -534,28 +527,28 @@ void scene::drawOverlay()
 
 	glColor4f(0, 0, 0, 1);
 	temp = "0";
-	glRasterPos2f(m_aspect - .35f + offset, .355f);
+	glRasterPos2f((m_aspect - .35f + offset) / m_zoom, .355f / m_zoom);
 	glutBitmapString(GLUT_BITMAP_HELVETICA_12, (unsigned char*) temp.c_str());
 
 	temp = "90";
-	glRasterPos2f(m_aspect - .27f + offset, .355f);
+	glRasterPos2f((m_aspect - .27f + offset) / m_zoom, .355f / m_zoom);
 	glutBitmapString(GLUT_BITMAP_HELVETICA_12, (unsigned char*) temp.c_str());
 
 	temp = "180";
-	glRasterPos2f(m_aspect - .185f + offset, .355f);
+	glRasterPos2f((m_aspect - .185f + offset) / m_zoom, .355f / m_zoom);
 	glutBitmapString(GLUT_BITMAP_HELVETICA_12, (unsigned char*) temp.c_str());
 
 	temp = "270";
-	glRasterPos2f(m_aspect - .085f + offset, .355f);
+	glRasterPos2f((m_aspect - .085f + offset) / m_zoom, .355f / m_zoom);
 	glutBitmapString(GLUT_BITMAP_HELVETICA_12, (unsigned char*) temp.c_str());
 
 	glColor4f(1, 1, 1, 1);
 	temp = "Properties";
-	glRasterPos2f(m_aspect - .325f + offset, .275f);
+	glRasterPos2f((m_aspect - .325f + offset) / m_zoom, .275f / m_zoom);
 	glutBitmapString(GLUT_BITMAP_HELVETICA_18, (unsigned char*) temp.c_str());
 
 	temp = "Platform?";
-	glRasterPos2f(m_aspect - .485f + offset, .23f);
+	glRasterPos2f((m_aspect - .485f + offset) / m_zoom, .23f / m_zoom);
 	glutBitmapString(GLUT_BITMAP_HELVETICA_12, (unsigned char*) temp.c_str());
 }
 
@@ -577,17 +570,10 @@ void scene::initObjects()
 {
 	//make basic objects for start
 	groundObjs.push_back(baseObject(
-		primitives::vertex(0.0f, -0.95f), 200.0f, .1f, tDirt));
+		primitives::vertex(0.0f, -1.0f), 200.0f, .2f, tDirtUpper));
 
-	list<primitives::vertex> verts;
-	verts.push_back( primitives::vertex( .1f, -.9f ) );
-	verts.push_back( primitives::vertex( .1f, -.7f ) );
-	verts.push_back( primitives::vertex( -.1f, -.9f ) );
 	groundObjs.push_back( baseObject(
-	primitives::vertex( 0.0f, -0.8f ), verts ) );
-
-	/*groundObjs.push_back( baseObject(
-	primitives::vertex( 1.625f, -.775f ), .25f, .25f, tWallsStone[rand() % 5] ) );*/
+	primitives::vertex( 1.625f, -.775f ), .25f, .25f, tWallsStone[rand() % 5] ) );
 }
 
 void scene::initMenu()
@@ -662,10 +648,12 @@ void scene::updateOutline(int x, int y)
 	else
 		m_mouseLoc.y >= 0 ? m_mouseLoc.y += .05f - proximity : m_mouseLoc.y += -.05f - proximity;
 	m_drawSize.x = -(m_clickLoc.x - m_mouseLoc.x);
-	//needed?
-	//m_drawCenter.x = m_clickLoc.x - (m_clickLoc.x - m_mouseLoc.x) / 2;
-
 	m_drawSize.y = -(m_clickLoc.y - m_mouseLoc.y);
-	//needed?
-	//m_drawCenter.y = m_clickLoc.y - (m_clickLoc.y - m_mouseLoc.y) / 2;
+}
+
+void scene::changeZoom(float diff)
+{
+	m_zoom += diff;
+	if (m_zoom < 0.25f)
+		m_zoom = 0.25f;
 }

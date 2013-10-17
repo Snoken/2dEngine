@@ -3,6 +3,7 @@
 #include "baseObject.h"
 #include "ground.h"
 #include "collision.h"
+#include "physics.h"
 #include <cmath>
 #include <map>
 
@@ -25,8 +26,7 @@ public:
 		m_state = IDLE;
 		m_walkSpeed = 0.2f;
 		m_runSpeed = 1.0f;
-		m_jumpSpeed = 3.0f;
-		m_vertSpeed = 0.0f;
+		m_jumpSpeed = 3.0;
 		m_slideSpeed = -0.3f;
 		m_rollSpeed = .8f;
 		m_bOnGround = false;
@@ -36,7 +36,6 @@ public:
 		m_damageDistance = 1.0f;
 		m_fallStart = 0.0f;
 		m_timeToImpact = 0.0f;
-		m_multiplier = 0.0f;
 		m_frame = 0.0f;
 		m_pSlidingOn = NULL;
 		m_climbAngle = 45.0f;
@@ -66,9 +65,10 @@ public:
 	{
 		if( !m_bIsRolling )
 		{
+			cout << "jumping" << endl;
 			m_frame = 0;
 			m_bOnGround = false;
-			m_vertSpeed = m_jumpSpeed;
+			m_movement.setVerticalComp(m_jumpSpeed);
 		}
 	}
 	void startRoll( const long double & elapsed );
@@ -81,19 +81,19 @@ public:
 	void updateLocation( const long double & elapsed, ground *belowPlayer, 
 		ground *abovePlayer, list<ground> *nearby, map<int, bool> *keyMap );
 	float getHealth(){ return m_health; }
-	double getMult(){ return m_multiplier; }
 	void decayMult();
 	void updateMult();
 	void airFrameUpdate();
 	ActorState groundFrameUpdate( const long double & elapsed, ground *abovePlayer );
-	bool isMoving() { return m_multiplier != 0; }
+	bool isMoving() { return m_movement.getHorizComp() != 0; }
 
 private:
-	double m_multiplier, m_lastRollTime;
+	double m_lastRollTime, m_jumpSpeed;
 	ground *m_pSlidingOn;
 	bool m_bGravity;
-	float m_health, m_fallStart, m_fallEnd, m_vertSpeed, m_slideSpeed,
-		m_walkSpeed, m_runSpeed, m_jumpSpeed, m_damageDistance, 
+	physics::vector m_movement;
+	float m_health, m_fallStart, m_fallEnd, m_slideSpeed,
+		m_walkSpeed, m_runSpeed, m_damageDistance, 
 		m_timeToImpact, m_climbAngle, m_rollSpeed, m_oldHeight;
 	float travelTime( float d, float v, float a );
 	void applyGravity( double elapsed );
@@ -102,7 +102,6 @@ private:
 	void moveByTimeX( long double elapsed );
 	void moveByDistanceX( float distance );
 	void moveByDistanceY( float distance );
-	//not currently in use
 	bool facing( const baseObject &one );
 	void changeHeight( float newHeight );
 	void endRoll( const long double & elapsed );

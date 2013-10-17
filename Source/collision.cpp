@@ -85,3 +85,8 @@ bool collision::nextTo( baseObject one, baseObject two )
 		return true;
 	return false;
 }
+
+bool collision::leftOf(baseObject one, baseObject two) 
+{
+	return one.xMax <= two.xMin;
+}

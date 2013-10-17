@@ -12,6 +12,10 @@
 #include "selection.h"
 #include <cmath>
 
+#ifdef WIN32
+	#define snprintf _snprintf
+#endif
+
 class scene
 {
 public:
@@ -22,10 +26,12 @@ public:
 		initObjects();
 		initOverlay();
 		initMenu();
+		m_zoom = 1.0;
 	}
 	void redraw(bool& bEditing, bool& bDrawOutline, bool& bDrawMenu);
 	void tryDelete();
 	void updateOutline(int x, int y);
+	void changeZoom(float diff);
 
 	void setMouseLoc(primitives::vertex v)
 	{
@@ -50,6 +56,10 @@ public:
 	primitives::vertex getMouseLoc()
 	{
 		return m_mouseLoc;
+	}
+	primitives::vertex getClickLoc()
+	{
+		return m_clickLoc;
 	}
 	primitives::vertex getCameraOffset()
 	{
@@ -83,6 +93,10 @@ public:
 	{
 		return &overlay;
 	}
+	float getZoom()
+	{
+		return m_zoom;
+	}
 	GLuint tPaused, tSave, tLoad, tCheck;
 
 private:
@@ -110,14 +124,14 @@ private:
 	list<baseObject> menuItems;
 	list<baseObject> overlay;
 
-	float m_aspect;
+	float m_aspect, m_zoom;
 	primitives::vertex m_mouseLoc, m_clickLoc, m_drawSize, m_cameraOffset;
 	selection selHandler;
 
 	actor *player;
 	ground *selected;
 
-	GLuint tSky, tSkyLower, tDirt, tSlide;
+	GLuint tSky, tSkyLower, tDirtUpper, tDirtLower, tSlide;
 	vector<GLuint> tCharStand, tCharRun, tCharJump, tCharRoll,
 		tWallsStone, tWallsWood;
 };

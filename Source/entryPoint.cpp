@@ -64,12 +64,13 @@ void reshape(GLsizei newWidth, GLsizei newHeigth) {  // GLsizei for non-negative
 	glLoadIdentity(); //Reset the projection matrix
 	glTranslatef(mainScene->getCameraOffset().x, mainScene->getCameraOffset().y, 0.0f); //move camera to player location
 	glPopMatrix();
+	const float zoom = mainScene->getZoom();
 	if (width >= height)
 		// aspect >= 1, set the height from -1 to 1, with larger width
-		gluOrtho2D(-1.0 * aspect, 1.0 * aspect, -1.0, 1.0);
+		gluOrtho2D(-1.0 * aspect / zoom, 1.0 * aspect / zoom, -1.0/zoom, 1.0/zoom);
 	else
 		// aspect < 1, set the width to -1 to 1, with larger height
-		gluOrtho2D(-1.0, 1.0, -1.0 / aspect, 1.0 / aspect);
+		gluOrtho2D(-1.0 / zoom, 1.0 / zoom, -1.0 / aspect / zoom, 1.0 / aspect / zoom);
 }
 
 void keyUp(unsigned char key, int x, int y)
@@ -139,7 +140,7 @@ void updatePlayerLocation( const long double & elapsed )
 		float maxDistance = 0.5f;
 		list<ground> nearby;
 		getNearbyWalls( *mainScene->getPlayer(), maxDistance, nearby);
-		if (mainScene->getPlayer()->getMult() != 0.0 && mainScene->getPlayer()->m_bOnGround)
+		if (mainScene->getPlayer()->isMoving() && mainScene->getPlayer()->m_bOnGround)
 		{
 			if( runChan == NULL )
 				#ifdef WIN32
@@ -178,11 +179,13 @@ void idleFunction(void)
 	//get new elapsed time
 	elapsed = glutGet(GLUT_ELAPSED_TIME)/1000.0;
 	updatePlayerLocation( elapsed - prevElapsed );
+	
 
 	//adjust viewpoint offset to follow player
 	primitives::vertex camOffset(mainScene->getCameraOffset());
 	camOffset.x = -(mainScene->getPlayer()->origin.x);
 	camOffset.x /= aspect;
+	camOffset.x *= mainScene->getZoom();
 	mainScene->setCameraOffset(camOffset);
 	reshape(width, height);
 
@@ -208,8 +211,8 @@ void initSounds()
 	fSystem->createSound("../Assets/Sounds/run.mp3", FMOD_HARDWARE, 0, &soundRun);
 	soundRun->setMode(FMOD_LOOP_OFF);
 
-	fSystem->createSound("../../Assets/Sounds/ambient.mp3", FMOD_HARDWARE, 0, &soundMusic);
-	soundMusic->setMode(FMOD_LOOP_NORMAL);
+	//fSystem->createSound("../Assets/Sounds/ambient.mp3", FMOD_HARDWARE, 0, &soundMusic);
+	//soundMusic->setMode(FMOD_LOOP_NORMAL);
 }
 void passiveMouse(int x, int y)
 {
@@ -221,10 +224,12 @@ void passiveMouse(int x, int y)
 	float mouseX = (float)x/(width/2);
 	mouseX *= aspect;
 	mouseX += mainScene->getPlayer()->origin.x;
+	mouseX /= mainScene->getZoom();
 	y -= height/2;
 	y *= -1;
 	float mouseY = (float)y/(width/2);
 	mouseY *= aspect;
+	mouseY /= mainScene->getZoom();
 	mainScene->setMouseLoc(primitives::vertex(mouseX, mouseY));
 }
 
@@ -243,6 +248,14 @@ void mouse(int btn, int state, int x, int y)
 			input.mouseUp(*mainScene);
 		}
 	}
+}
+
+void wheel(int wheel, int direction, int x, int y)
+{
+	if (direction == 1)
+		mainScene->changeZoom(0.05f);
+	else
+		mainScene->changeZoom(-0.05f);
 }
 
 void checkUpdate(int x, int y)
@@ -268,10 +281,13 @@ int main(int argc, char** argv)
 	glutKeyboardUpFunc(keyUp);
 	glutSetCursor(GLUT_CURSOR_NONE);
 	glutMouseFunc(mouse);
+	glutMouseWheelFunc(wheel);
 	glutPassiveMotionFunc( passiveMouse );
 	glutMotionFunc( checkUpdate );
 	glutIdleFunc(idleFunction);
 
+	//Set background color
+	glClearColor(121.0f/255.0f,175.0f/255.0f,222.0f/255.0f, 1.0);
 	mainScene = new scene(aspect);
 	initSounds();
 	#ifdef WIN32

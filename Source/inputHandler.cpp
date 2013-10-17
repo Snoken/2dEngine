@@ -129,52 +129,61 @@ void inputHandler::mouseDown(scene &mainScene, const bool &bDrawMenu, const bool
 				cout << result << endl;
 		}
 	}
-	else
+	else if (bEditing)
 	{
 		ground* selected = selection::checkSelected(clickLoc, *mainScene.getGround(), bEditing);
-		if (bEditing)
+		primitives::vertex adjusted(clickLoc);
+		adjusted.x -= mainScene.getPlayer()->origin.x;
+		baseObject *overlaySelected = selection::checkSelectedOverlay(adjusted, 
+			*mainScene.getOverlay());
+		if (overlaySelected != NULL)
 		{
-			primitives::vertex adjusted(clickLoc);
-			adjusted.x -= mainScene.getPlayer()->origin.x;
-			baseObject *overlaySelected = selection::checkSelectedOverlay(adjusted, 
-				*mainScene.getOverlay());
-			if (overlaySelected != NULL)
+			list<ground>* groundObjs = mainScene.getGround();
+			for (list<ground>::iterator itr = groundObjs->begin(); itr != groundObjs->end(); ++itr)
 			{
-				list<ground>* groundObjs = mainScene.getGround();
-				for (list<ground>::iterator itr = groundObjs->begin(); itr != groundObjs->end(); ++itr)
+				if (itr->bSelected)
 				{
-					if (itr->bSelected)
-					{
-						//This bit of nonsense is a hack to use texture id numbers to
-						//  detect which button has been clicked
-						//TODO: find a better way, enum of buttons?
-						if (overlaySelected->texture == 290)
-							itr->bIsPlatform = !itr->bIsPlatform;
-						else if (overlaySelected->texture >= 900)
-							itr->texRotation = (float) (overlaySelected->texture / 10 % 360);
-						else
-							itr->texture = overlaySelected->texture;
-					}
+					//This bit of nonsense is a hack to use texture id numbers to
+					//  detect which button has been clicked
+					//TODO: find a better way, enum of buttons?
+					if (overlaySelected->texture == 290)
+						itr->bIsPlatform = !itr->bIsPlatform;
+					else if (overlaySelected->texture >= 900)
+						itr->texRotation = (float) (overlaySelected->texture / 10 % 360);
+					else
+						itr->texture = overlaySelected->texture;
 				}
 			}
-			float mouseX = floor(mainScene.getMouseLoc().x * 100.0f) / 100.0f;
-			float proximity = fmod(mouseX, .05f);
-			if (abs(proximity) < .025f)
-				mouseX -= proximity;
-			else
-				mouseX >= 0 ? mouseX += .05f - proximity : mouseX += -.05f - proximity;
-
-			float mouseY = floor(mainScene.getMouseLoc().y * 100.0f) / 100.0f;
-			proximity = fmod(mouseY, .05f);
-			if (abs(proximity) < .025f)
-				mouseY -= proximity;
-			else
-				mouseY >= 0 ? mouseY += .05f - proximity : mouseY += -.05f - proximity;
-
-			clickLoc.x = mouseX;
-			clickLoc.y = mouseY;
-			mainScene.setClickLoc(clickLoc);
 		}
+		float mouseX = floor(mainScene.getMouseLoc().x * 100.0f) / 100.0f;
+		float proximity = fmod(mouseX, .05f);
+		if (abs(proximity) < .025f)
+			mouseX -= proximity;
+		else
+			mouseX >= 0 ? mouseX += .05f - proximity : mouseX += -.05f - proximity;
+
+		float mouseY = floor(mainScene.getMouseLoc().y * 100.0f) / 100.0f;
+		proximity = fmod(mouseY, .05f);
+		if (abs(proximity) < .025f)
+			mouseY -= proximity;
+		else
+			mouseY >= 0 ? mouseY += .05f - proximity : mouseY += -.05f - proximity;
+
+		clickLoc.x = mouseX;
+		clickLoc.y = mouseY;
+		mainScene.setClickLoc(clickLoc);
+	}
+	else
+	{
+		/* start pseudo-code
+		if gun equipped
+			projectile::create(projectile::type::bullet, primitives::vertex aimedAt)
+		else if bow equipped
+			projectile::create(projectile::type::arrow, primitives::vertex aimedAt)
+		...
+		end pseudo-code*/
+		/*projectileList projectiles = mainScene->getProjectiles();
+		::create(projectile::type::bullet, primitives::vertex aimedAt)*/
 	}
 }
 
@@ -182,6 +191,7 @@ void inputHandler::mouseUp(scene &mainScene)
 {
 	float width = mainScene.getDrawSize().x;
 	float height = mainScene.getDrawSize().y;
+	primitives::vertex clickLoc = mainScene.getClickLoc();
 	drawCenter.x = clickLoc.x + width / 2;
 	drawCenter.y = clickLoc.y + height / 2;
 	//prevent accidental creating

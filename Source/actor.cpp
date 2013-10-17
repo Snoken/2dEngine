@@ -13,25 +13,15 @@ float actor::travelTime( float d, float v, float a )
 
 void actor::applyGravity( double elapsed )
 {
-	if( elapsed == 0.0f )
-		return;
-	if( m_bOnGround )
-		m_vertSpeed = 0;
-	else
-	{
-		m_vertSpeed += (float)elapsed * -9.8f; //accel of gravity
-		origin.y += m_vertSpeed * (float)elapsed;
-		for( list<primitives::vertex>::iterator itr = points.begin(); itr != points.end(); ++itr )
-		{
-			itr->y += m_vertSpeed * (float)elapsed;
-		}
-	}
+	m_movement.applyGravity(elapsed);
+	moveByTimeY((float)elapsed);
 	setMaxMin();
 }
 
 float actor::timeToCollisionY( baseObject one )
 {
-	return travelTime( yMin - one.yMax, m_vertSpeed, -9.8f );
+	double vert = m_movement.magnitude * sin(m_movement.angle * PI / 180.0f);
+	return travelTime( yMin - one.yMax, (float)vert, -9.8f );
 }
 
 void actor::moveByTimeX( long double elapsed )
@@ -44,7 +34,7 @@ void actor::moveByTimeX( long double elapsed )
 			difX *= -1.0f;
 	}
 	else
-		difX = m_runSpeed*(float)elapsed * (GLfloat)m_multiplier;
+		difX = (float)elapsed * (float)m_movement.getHorizComp();
 	this->origin.x += difX;
 	for( list<primitives::vertex>::iterator itr = points.begin(); itr != points.end(); ++itr )
 		itr->x += difX;
@@ -53,29 +43,28 @@ void actor::moveByTimeX( long double elapsed )
 
 void actor::moveByTimeY( float time )
 {
-	origin.y += m_vertSpeed * (float)time;
+	double vert = m_movement.magnitude * sin(m_movement.angle * PI / 180.0f);
+	origin.y += (float)vert * (float)time;
 	for( list<primitives::vertex>::iterator itr = points.begin(); itr != points.end(); ++itr )
-		itr->y += m_vertSpeed * (float)time;
+		itr->y += (float) vert * (float) time;
 	setMaxMin();
-	m_bOnGround = true;
-	m_vertSpeed = 0.0f;
+	vert = 0.0f;
 }
 
 void actor::moveByDistanceX( float distance )
 {
-	GLfloat difX = distance;
-	this->origin.x += difX;
+	cout << distance << endl;
+	this->origin.x += distance;
 	for( list<primitives::vertex>::iterator itr = points.begin(); itr != points.end(); ++itr )
-		itr->x += difX;
+		itr->x += distance;
 	setMaxMin();
 }
 
 void actor::moveByDistanceY( float distance )
 {
-	GLfloat difY = distance;
-	this->origin.y += difY;
+	this->origin.y += distance;
 	for (list<primitives::vertex>::iterator itr = points.begin(); itr != points.end(); ++itr)
-		itr->y += difY;
+		itr->y += distance;
 	setMaxMin();
 }
 
@@ -83,6 +72,7 @@ void actor::updateLocation( const long double & elapsed, ground *belowPlayer,
 	ground *abovePlayer, list<ground> *nearby, map<int, bool> *keyMap )
 {
 	actor *temp;
+	double horiz = m_movement.getHorizComp();
 	if( m_pSlidingOn == NULL )
 		m_bOnWall = false;
 	else
@@ -91,37 +81,42 @@ void actor::updateLocation( const long double & elapsed, ground *belowPlayer,
 			m_pSlidingOn = NULL;
 		else if( m_bOnWall && (keyMap->find('w'))->second == true )
 		{
-			m_bFacingRight ? m_multiplier = 1.0f: m_multiplier = -1.0f;
+			m_bFacingRight ? m_movement.setHorizontalComp(1.0f): 
+				m_movement.setHorizontalComp(-1.0f);
 			m_bOnWall = false;
-			m_vertSpeed = 3.0f;
+			m_movement.setVerticalComp(3.0f);
 			m_pSlidingOn = NULL;
 		}
 		else if( m_bOnWall && (keyMap->find('d'))->second == true && m_bFacingRight )
 		{
 			m_bOnWall = false;
 			m_pSlidingOn = NULL;
+			m_movement.setHorizontalComp(.1f);
 		}
 		else if( m_bOnWall && (keyMap->find('a'))->second == true && !m_bFacingRight )
 		{
 			m_bOnWall = false;
 			m_pSlidingOn = NULL;
+			m_movement.setHorizontalComp(-.1f);
 		}
 		else
 		{
 			if( !m_bOnWall )
 			{
 				m_bOnWall = true;
-				m_bFacingRight = !m_bFacingRight;
+				m_movement.setVerticalComp(0);
+				collision::leftOf(*this, *m_pSlidingOn) ? m_bFacingRight = false : m_bFacingRight = true;
 			}
 			m_fallStart = origin.y;
 		}
 	}
 
-	if( m_vertSpeed < 0.0f && m_fallStart == 999.99f )
+	double vert = m_movement.getVertComp();
+	if( vert < 0.0f && m_fallStart == 999.99f )
 		m_fallStart = origin.y;
 
 	primitives::vertex below( origin.x, yMin - .02f );
-	if( belowPlayer != NULL && !(collision::inObject( below, *belowPlayer ) && m_vertSpeed >= 0.0f) )
+	if( belowPlayer != NULL && !(collision::inObject( below, *belowPlayer ) && vert >= 0.0f) )
 	{
 		if( m_bOnGround )
 			m_fallStart = origin.y;
@@ -141,10 +136,10 @@ void actor::updateLocation( const long double & elapsed, ground *belowPlayer,
 			temp->applyGravity( elapsed );
 
 		if( abovePlayer != NULL && !abovePlayer->bIsPlatform && 
-			m_vertSpeed > 0.0f && collision::areColliding( *temp, *abovePlayer ) )
+			vert > 0.0f && collision::areColliding( *temp, *abovePlayer ) )
 		{
 			moveByDistanceY( abovePlayer->yMin - yMax - .005f );
-			m_vertSpeed = 0.0f;
+			m_movement.setVerticalComp(0.0);
 		}
 		//if next iter of motion still leaves player above ground, do it
 		else if(temp->timeToCollisionY( *belowPlayer ) > 0)
@@ -156,6 +151,10 @@ void actor::updateLocation( const long double & elapsed, ground *belowPlayer,
 		else
 		{
 			moveByTimeY( m_timeToImpact );
+			m_bOnGround = true;
+			m_bOnWall = false;
+			m_pSlidingOn = NULL;
+			m_movement.setVerticalComp(0);
 			m_fallEnd = origin.y;
 			takeFallDamage( m_fallStart-m_fallEnd );
 			m_fallStart = 999.99f;
@@ -164,8 +163,8 @@ void actor::updateLocation( const long double & elapsed, ground *belowPlayer,
 	}
 	else
 		m_state = groundFrameUpdate(elapsed, abovePlayer);
-
-	if( m_multiplier != 0.0f && !m_bOnWall )
+	
+	if( horiz != 0.0f && !m_bOnWall )
 	{
 		//check if there is a wall within 1.0f
 		if( nearby->empty() )
@@ -180,18 +179,18 @@ void actor::updateLocation( const long double & elapsed, ground *belowPlayer,
 			{
 				if( xMin == itr->xMax )
 				{
-					if( m_multiplier < 0)
+					if (horiz < 0)
 					{
-						m_multiplier = 0.0f;
+						horiz = 0.0f;
 						moved = true;
 						break;
 					}
 				}
 				else if( xMax == itr->xMin )
 				{
-					if( m_multiplier > 0)
+					if (horiz > 0)
 					{
-						m_multiplier = 0.0f;
+						horiz = 0.0f;
 						moved = true;
 						break;
 					}
@@ -200,11 +199,12 @@ void actor::updateLocation( const long double & elapsed, ground *belowPlayer,
 				{
 					if( !m_bOnGround )
 						m_pSlidingOn = new ground(*itr);
-					if(xMin > itr->xMax) 
-						moveByDistanceX( -(xMin - itr->xMax) );
+					cout << (bool) collision::leftOf(*this, *itr) << endl;
+					if (collision::leftOf(*this, *itr))
+						moveByDistanceX(itr->xMin - xMax);
 					else
-						moveByDistanceX( itr->xMin - xMax );
-					m_multiplier = 0.0f;
+						moveByDistanceX(-(xMin - itr->xMax));
+					horiz = 0.0f;
 					moved = true;
 					break;
 				}
@@ -217,60 +217,56 @@ void actor::updateLocation( const long double & elapsed, ground *belowPlayer,
 
 void actor::decayMult()
 {
-	if( m_bOnGround && m_multiplier != 0 )
+	double horiz = m_movement.getHorizComp();
+	if( m_bOnGround && horiz != 0 )
 	{
-		if( abs(m_multiplier) < .05 )
+		if( abs(horiz) < .05 )
 		{
 			m_frame = 0;
-			m_multiplier = 0;
+			m_movement.setHorizontalComp(0);
 		}
 		else
-			m_multiplier /= 1.2;
+			m_movement.setHorizontalComp(horiz/1.5);
 	}
 }
 
 void actor::updateMult()
 {
 	//only change mult if player is not rolling
-	if( !m_bIsRolling )
+ 	if( !m_bIsRolling )
 	{
 		//only do if player is not on wall and not facing right
+		double horiz = m_movement.getHorizComp();
 		if( !m_bOnWall && !m_bFacingRight )
 		{
 			//logic for ramping up move speed
-			if( m_multiplier >= 0 )
+			if (horiz > 0.0001)
 			{
-				if( m_bOnGround )
-					m_multiplier = -.1;
-				else
-					m_multiplier -= .1;
+				decayMult();
+				return;
 			}
-			else if( m_multiplier > -1.0 )
-			{
-				if( m_multiplier > -.1 )
-					m_multiplier = -.1;
-				m_multiplier *= 1.2;
-			}
-			else
-				m_multiplier = -1.0;
+			else if (horiz < 0.0001 && horiz > -0.0001 )
+				horiz = -0.1*m_runSpeed;
+			else if (horiz < 0)
+				horiz = horiz*1.2;
+			if (horiz < -m_runSpeed)
+				horiz = -m_runSpeed;
 		}
 		else if( !m_bOnWall && m_bFacingRight )
 		{
-			//logic for ramping up moveByTimeX speed
-			if( m_multiplier <= 0 )
-				if( m_bOnGround )
-					m_multiplier = .1;
-				else
-					m_multiplier += .1;
-			else if( m_multiplier < 1.0 )
+			if (horiz < -0.0001)
 			{
-				if( m_multiplier < .1 )
-					m_multiplier = .1;
-				m_multiplier *= 1.2;
+				decayMult();
+				return;
 			}
-			else
-				m_multiplier = 1.0;
+			else if (horiz < 0.0001 && horiz > -0.0001)
+				horiz = 0.1*m_runSpeed;
+			else if (horiz > 0)
+				horiz = horiz*1.2;
+			if (horiz > m_runSpeed)
+				horiz = m_runSpeed;
 		}
+		m_movement.setHorizontalComp(horiz);
 	}
 }
 
@@ -283,7 +279,8 @@ void actor::airFrameUpdate()
 
 actor::ActorState actor::groundFrameUpdate( const long double & elapsed, ground *abovePlayer )
 {
-	if( m_multiplier == 0 )
+	double horiz = m_movement.getHorizComp();
+	if( abs(horiz) <= .0001 )
 	{
 		m_frame += .05;
 		if( m_frame >= 3.95 )
@@ -306,7 +303,7 @@ actor::ActorState actor::groundFrameUpdate( const long double & elapsed, ground 
 				if( abovePlayer == NULL || !collision::areColliding(*endRollTest, *abovePlayer) )
 				{
 					endRoll(elapsed);
-					if( m_multiplier == 0 )
+					if( abs(horiz) <= .0001 )
 						return IDLE;
 					else
 						return RUNNING;
