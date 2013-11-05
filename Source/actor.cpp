@@ -53,7 +53,6 @@ void actor::moveByTimeY( float time )
 
 void actor::moveByDistanceX( float distance )
 {
-	cout << distance << endl;
 	this->origin.x += distance;
 	for( list<primitives::vertex>::iterator itr = points.begin(); itr != points.end(); ++itr )
 		itr->x += distance;
@@ -69,7 +68,7 @@ void actor::moveByDistanceY( float distance )
 }
 
 void actor::updateLocation( const long double & elapsed, ground *belowPlayer, 
-	ground *abovePlayer, list<ground> *nearby, map<int, bool> *keyMap )
+	ground *abovePlayer, map<float, ground*> *nearby, map<int, bool> *keyMap)
 {
 	actor *temp;
 	double horiz = m_movement.getHorizComp();
@@ -105,7 +104,8 @@ void actor::updateLocation( const long double & elapsed, ground *belowPlayer,
 			{
 				m_bOnWall = true;
 				m_movement.setVerticalComp(0);
-				collision::leftOf(*this, *m_pSlidingOn) ? m_bFacingRight = false : m_bFacingRight = true;
+				collision::leftOf(*this, *m_pSlidingOn) ? 
+					m_bFacingRight = false : m_bFacingRight = true;
 			}
 			m_fallStart = origin.y;
 		}
@@ -123,7 +123,7 @@ void actor::updateLocation( const long double & elapsed, ground *belowPlayer,
 		m_bOnGround = false;
 	}
 
-	//if the player is currently in the air, apply gravity
+	//if the actor is currently in the air, apply gravity
 	if( !m_bOnGround )
 	{
 		airFrameUpdate();
@@ -158,59 +158,47 @@ void actor::updateLocation( const long double & elapsed, ground *belowPlayer,
 			m_fallEnd = origin.y;
 			takeFallDamage( m_fallStart-m_fallEnd );
 			m_fallStart = 999.99f;
-
 		}
 	}
 	else
 		m_state = groundFrameUpdate(elapsed, abovePlayer);
 	
-	if( horiz != 0.0f && !m_bOnWall )
+	//the magic number of .25 is to prevent large moves after break points and the like
+	if( horiz != 0.0f && !m_bOnWall && elapsed < .25 )
 	{
-		//check if there is a wall within 1.0f
+		//check if there is a wall within 0.5f
 		if( nearby->empty() )
 			moveByTimeX( elapsed );
 		//try moving
 		else
 		{
-			temp = new actor(*this);
 			bool moved = false;
-			temp->moveByTimeX( elapsed );
-			for( list<ground>::iterator itr = nearby->begin(); itr != nearby->end(); ++itr )
+			const long double moveDistance = horiz*elapsed;
+			for (map<float, ground*>::iterator itr = nearby->begin(); itr != nearby->end(); ++itr)
 			{
-				if( xMin == itr->xMax )
+				//if the distance to the object is greater than the amount moved, don't need to worry
+				//	about collision
+				if (itr->first > abs(moveDistance))
+					continue;
+				//if object in question is to the right of player move in positive dir
+				if (collision::leftOf(*this, *itr->second) && horiz > 0)
 				{
-					if (horiz < 0)
-					{
-						horiz = 0.0f;
-						moved = true;
-						break;
-					}
+					moveByDistanceX(itr->first - .001);
+					m_movement.setHorizontalComp(0);
+					moved = true;
+					break;
 				}
-				else if( xMax == itr->xMin )
+				//otherwise move by negative amt
+				else if (collision::rightOf(*this, *itr->second) && horiz < 0)
 				{
-					if (horiz > 0)
-					{
-						horiz = 0.0f;
-						moved = true;
-						break;
-					}
-				}
-				if( collision::areColliding( *temp, *itr ) && !itr->bIsPlatform )
-				{
-					if( !m_bOnGround )
-						m_pSlidingOn = new ground(*itr);
-					cout << (bool) collision::leftOf(*this, *itr) << endl;
-					if (collision::leftOf(*this, *itr))
-						moveByDistanceX(itr->xMin - xMax);
-					else
-						moveByDistanceX(-(xMin - itr->xMax));
-					horiz = 0.0f;
+					moveByDistanceX(-(itr->first - .001));
+					m_movement.setHorizontalComp(0);
 					moved = true;
 					break;
 				}
 			}
-			if( !moved )
-				*this = *temp;
+			if (!moved)
+				moveByTimeX(elapsed);
 		}
 	}
 }
@@ -360,5 +348,21 @@ void actor::startRoll( const long double & elapsed )
 		m_frame = 0;
 		m_oldHeight = height;
 		changeHeight( height*(1.0f/2.0f) );
+	}
+}
+
+void actor::getNearbyWalls(const float & maxDistance, map<float,ground*> &nearby, list<ground>* allGround)
+{
+	//get list of walls nearest actor
+	for (list<ground>::iterator itr = allGround->begin(); itr != allGround->end(); ++itr)
+	{
+		float gapSize = 0.0f;
+		if (itr->xMin > this->xMax)
+			gapSize = itr->xMin - this->xMax;
+		else
+			gapSize = this->xMin - itr->xMax;
+
+		if (gapSize < maxDistance && collision::nextTo(*this, *itr) && !collision::above(*this, *itr))
+			nearby.insert(make_pair(gapSize, &(*itr)));
 	}
 }

@@ -1,6 +1,7 @@
 #ifndef PHYSICS_H
 #define PHYSICS_H
 #include <cmath>
+#include "primitives.h"
 
 namespace physics
 {
@@ -9,6 +10,19 @@ namespace physics
 	struct vector{
 		double magnitude, angle;
 		vector() : magnitude(0.0f), angle(0.0f){}
+		//use magnitude and destination to find angle
+		vector(double mag, double angle) : magnitude(mag), angle(angle){}
+		vector(double mag, primitives::vertex orig, primitives::vertex dest) : 
+			magnitude(mag)
+		{
+			angle = atan2(dest.y - orig.y, dest.x-orig.x) * 180.0 / PI;
+		}
+		bool operator==(const vector& rhs)
+		{
+			return magnitude == rhs.magnitude &&
+				angle == rhs.angle;
+		}
+
 		void changeVerticalComp(double addAmount);
 		void changeHorizontalComp(double addAmount);
 		void setVerticalComp(double value);
@@ -23,5 +37,9 @@ namespace physics
 			return this->magnitude * sin(this->angle * PI / 180.0f);
 		}
 	};
+	double apex(vector &motion, primitives::vertex &start);
+	double apexTime(vector &motion);
+	//this method only considers the vertical aspect
+	double timeToLand(vector &motion, primitives::vertex &start, primitives::vertex &end);
 }
 #endif

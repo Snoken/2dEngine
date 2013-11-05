@@ -40,3 +40,19 @@ void physics::vector::setHorizontalComp(double value)
 	this->angle = atan2(vert, horiz) * 180.0 / PI;
 	this->magnitude = sqrt(pow(horiz, 2) + pow(vert, 2));
 }
+double physics::apexTime(vector &motion)
+{
+	return -motion.getVertComp() / aGravity;
+}
+
+double physics::apex(vector &motion, primitives::vertex &start)
+{
+	double time = apexTime(motion);
+	return start.y + motion.getVertComp()*time + 0.5*aGravity*pow(time, 2.0);
+}
+
+double physics::timeToLand(vector &motion, primitives::vertex &start, primitives::vertex &end)
+{
+	double time = apexTime(motion);
+	return time + abs(apex(motion, start) - end.y) / -aGravity;
+}

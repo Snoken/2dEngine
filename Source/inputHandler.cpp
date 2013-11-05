@@ -50,8 +50,8 @@ void inputHandler::handleKeyDown(unsigned char key, bool& bEditing, bool& bDrawM
 	}
 }
 
-void inputHandler::processKeys(scene &mainScene, const bool& bEditing, const long double& elapsed, 
-	FMOD::System *fSystem, FMOD::Sound *soundJump)
+void inputHandler::processKeys(scene &mainScene, const bool& bEditing, 
+	const long double& elapsed, FMOD::System* fSystem, FMOD::Sound* soundJump)
 {
 	if (bEditing && keyMap.find(DEL)->second == true)
 		mainScene.tryDelete();
@@ -78,15 +78,12 @@ void inputHandler::processKeys(scene &mainScene, const bool& bEditing, const lon
 	}
 	if (keyMap.find('w')->second == true || keyMap.find(SPACEBAR)->second == true)
 	{
-		if (player->m_bOnGround)
-		{
 			#ifdef WIN32
 				fSystem->playSound(soundJump, 0, false, 0);
 			#else
 				fSystem->playSound(FMOD_CHANNEL_FREE, soundJump, false, 0);
 			#endif
 			player->jump();
-		}
 	}
 }
 
@@ -175,15 +172,8 @@ void inputHandler::mouseDown(scene &mainScene, const bool &bDrawMenu, const bool
 	}
 	else
 	{
-		/* start pseudo-code
-		if gun equipped
-			projectile::create(projectile::type::bullet, primitives::vertex aimedAt)
-		else if bow equipped
-			projectile::create(projectile::type::arrow, primitives::vertex aimedAt)
-		...
-		end pseudo-code*/
-		/*projectileList projectiles = mainScene->getProjectiles();
-		::create(projectile::type::bullet, primitives::vertex aimedAt)*/
+		mainScene.setClickLoc(clickLoc);
+		mainScene.addProjectile();
 	}
 }
 

@@ -63,9 +63,8 @@ public:
 	}
 	void jump()
 	{
-		if( !m_bIsRolling )
+		if( !m_bIsRolling && m_bOnGround )
 		{
-			cout << "jumping" << endl;
 			m_frame = 0;
 			m_bOnGround = false;
 			m_movement.setVerticalComp(m_jumpSpeed);
@@ -79,15 +78,17 @@ public:
 	}
 
 	void updateLocation( const long double & elapsed, ground *belowPlayer, 
-		ground *abovePlayer, list<ground> *nearby, map<int, bool> *keyMap );
+		ground *abovePlayer, map<float, ground*> *nearby, map<int, bool> *keyMap);
 	float getHealth(){ return m_health; }
+	void takeDamage(float pain){ m_health -= pain; }
 	void decayMult();
 	void updateMult();
 	void airFrameUpdate();
 	ActorState groundFrameUpdate( const long double & elapsed, ground *abovePlayer );
 	bool isMoving() { return m_movement.getHorizComp() != 0; }
+	void getNearbyWalls(const float & maxDistance, map<float, ground*> &nearby, list<ground>* allGround);
 
-private:
+protected:
 	double m_lastRollTime, m_jumpSpeed;
 	ground *m_pSlidingOn;
 	bool m_bGravity;

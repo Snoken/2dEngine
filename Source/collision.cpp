@@ -24,7 +24,7 @@ bool collision::intersecting( primitives::vertex ends1[2], primitives::vertex en
 bool collision::inObject( primitives::vertex point, baseObject obj )
 {
 	if (point.x < obj.xMin || point.x > obj.xMax || point.y < obj.yMin || point.y > obj.yMax) {
-		// Definitely not within the polygon!
+		// Definitely not within the polygon
 		return false;
 	}
 
@@ -69,10 +69,20 @@ bool collision::above( baseObject one, baseObject two )
 		return true;
 	return false;
 }
+bool collision::above(primitives::vertex point, baseObject obj)
+{
+	return (point.y >= obj.yMin) &&
+		(point.x <= obj.xMax && point.x >= obj.xMin);
+}
 
 bool collision::below( baseObject one, baseObject two )
 {
 	return one.yMax < two.yMin;
+}
+bool collision::below(primitives::vertex point, baseObject obj)
+{
+	return (point.y <= obj.yMin) &&
+		(point.x <= obj.xMax && point.x >= obj.xMin);
 }
 
 bool collision::nextTo( baseObject one, baseObject two )
@@ -85,8 +95,24 @@ bool collision::nextTo( baseObject one, baseObject two )
 		return true;
 	return false;
 }
-
-bool collision::leftOf(baseObject one, baseObject two) 
+bool collision::nextTo(primitives::vertex point, baseObject obj)
 {
-	return one.xMax <= two.xMin;
+	return point.y <= obj.yMax && point.y >= obj.yMin;
+}
+
+bool collision::leftOf(baseObject &one, baseObject &two) 
+{
+	return one.xMax < two.xMin;
+}
+bool collision::leftOf(primitives::vertex &point, baseObject &obj)
+{
+	return point.x < obj.xMin;
+}
+bool collision::rightOf(baseObject &one, baseObject &two)
+{
+	return one.xMin > two.xMax;
+}
+bool collision::against(baseObject &one, baseObject &two)
+{
+	return one.xMax == two.xMin || one.xMin == one.xMax;
 }

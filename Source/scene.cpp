@@ -10,7 +10,9 @@ void scene::redraw(bool& bEditing, bool& bDrawOutline, bool& bDrawMenu)
 	drawGround(bEditing);
 	if (bEditing)
 		drawGrid();
-	drawPlayer();
+	drawActor(player);
+	drawActor(bot1);
+	drawProjectiles();
 	drawForeground();
 	if (bDrawOutline)
 		drawOutline();
@@ -19,8 +21,25 @@ void scene::redraw(bool& bEditing, bool& bDrawOutline, bool& bDrawMenu)
 	if (bDrawMenu)
 		drawMenu();
 	drawCursor();
-
 	glutSwapBuffers();
+	fSystem->update();
+}
+
+void scene::initSounds()
+{
+	//init FMOD
+	FMOD::System_Create(&fSystem);// create an instance of the game engine
+	fSystem->init(32, FMOD_INIT_NORMAL, 0);// initialise the game engine with 32 channels
+
+	//load sounds
+	fSystem->createSound("../Assets/Sounds/jump.wav", FMOD_HARDWARE, 0, &soundJump);
+	soundJump->setMode(FMOD_LOOP_OFF);
+
+	fSystem->createSound("../Assets/Sounds/run.mp3", FMOD_HARDWARE, 0, &soundRun);
+	soundRun->setMode(FMOD_LOOP_OFF);
+
+	//fSystem->createSound("../Assets/Sounds/ambient.mp3", FMOD_HARDWARE, 0, &soundMusic);
+	//soundMusic->setMode(FMOD_LOOP_NORMAL);
 }
 
 void scene::drawGrid()
@@ -52,98 +71,98 @@ void scene::drawGrid()
 	glEnd();
 }
 
-void scene::drawPlayer()
+void scene::drawActor(actor* act)
 {
-	GLfloat *currColor = player->color;
+	GLfloat *currColor = act->color;
 	glEnable(GL_BLEND);
 	glEnable(GL_TEXTURE_2D);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 	//bind appropriate texture to player, increment m_frame as appropriate based 
 	//		if player is in air on player state
-	if (!player->m_bOnGround)
+	if (!act->m_bOnGround)
 	{
-		if (player->m_bOnWall)
+		if (act->m_bOnWall)
 			glBindTexture(GL_TEXTURE_2D, tSlide);
 		else
-			glBindTexture(GL_TEXTURE_2D, tCharJump[(int) floor(player->m_frame)]);
+			glBindTexture(GL_TEXTURE_2D, tCharJump[(int) floor(act->m_frame)]);
 	}
 	else
 	{
-		if (player->m_state == actor::RUNNING)
+		if (act->m_state == actor::RUNNING)
 		{
-			if ((unsigned int) floor(player->m_frame) > tCharRun.size() - 1)
-				player->m_frame = 0;
-			glBindTexture(GL_TEXTURE_2D, tCharRun[(int) floor(player->m_frame)]);
+			if ((unsigned int) floor(act->m_frame) > tCharRun.size() - 1)
+				act->m_frame = 0;
+			glBindTexture(GL_TEXTURE_2D, tCharRun[(int) floor(act->m_frame)]);
 		}
-		else if (player->m_state == actor::ROLLING)
+		else if (act->m_state == actor::ROLLING)
 		{
-			if ((unsigned int) floor(player->m_frame) > tCharRoll.size() - 1)
-				player->m_frame = 0;
-			glBindTexture(GL_TEXTURE_2D, tCharRoll[(int) floor(player->m_frame)]);
+			if ((unsigned int) floor(act->m_frame) > tCharRoll.size() - 1)
+				act->m_frame = 0;
+			glBindTexture(GL_TEXTURE_2D, tCharRoll[(int) floor(act->m_frame)]);
 		}
-		else if (player->m_state == actor::IDLE)
+		else if (act->m_state == actor::IDLE)
 		{
-			if ((unsigned int) floor(player->m_frame) > tCharStand.size() - 1)
-				player->m_frame = 0;
-			glBindTexture(GL_TEXTURE_2D, tCharStand[(int) floor(player->m_frame)]);
+			if ((unsigned int) floor(act->m_frame) > tCharStand.size() - 1)
+				act->m_frame = 0;
+			glBindTexture(GL_TEXTURE_2D, tCharStand[(int) floor(act->m_frame)]);
 		}
 	}
 
 	glBegin(GL_QUADS);
 	//draw textures appropriately based on movement direction
-	primitives::vertex center = player->origin;
-	float w = player->width, h = player->height;
+	primitives::vertex center = act->origin;
+	float w = act->width, h = act->height;
 	//compensate for changed player dimensions if rolling
 	//NOTE: This is a hack, fix this
-	if (player->m_bIsRolling)
+	if (act->m_bIsRolling)
 	{
-		center.y = player->yMin + h;
+		center.y = act->yMin + h;
 		w *= 2; h *= 2;
 	}
-	if (player->m_bFacingRight)
+	if (act->m_bFacingRight)
 	{
-		glTexCoord2f(0.0f, 0.0f); glVertex2f(center.x - h / 2, player->yMin - .01f);
-		glTexCoord2f(0.0f, 1.0f); glVertex2f(center.x - h / 2, player->yMin + h);
-		glTexCoord2f(1.0f, 1.0f); glVertex2f(center.x + h / 2, player->yMin + h);
-		glTexCoord2f(1.0f, 0.0f); glVertex2f(center.x + h / 2, player->yMin - .01f);
+		glTexCoord2f(0.0f, 0.0f); glVertex2f(center.x - h / 2, act->yMin - .01f);
+		glTexCoord2f(0.0f, 1.0f); glVertex2f(center.x - h / 2, act->yMin + h);
+		glTexCoord2f(1.0f, 1.0f); glVertex2f(center.x + h / 2, act->yMin + h);
+		glTexCoord2f(1.0f, 0.0f); glVertex2f(center.x + h / 2, act->yMin - .01f);
 	}
 	else
 	{
-		glTexCoord2f(1.0f, 0.0f); glVertex2f(center.x - h / 2, player->yMin - .01f);
-		glTexCoord2f(1.0f, 1.0f); glVertex2f(center.x - h / 2, player->yMin + h);
-		glTexCoord2f(0.0f, 1.0f); glVertex2f(center.x + h / 2, player->yMin + h);
-		glTexCoord2f(0.0f, 0.0f); glVertex2f(center.x + h / 2, player->yMin - .01f);
+		glTexCoord2f(1.0f, 0.0f); glVertex2f(center.x - h / 2, act->yMin - .01f);
+		glTexCoord2f(1.0f, 1.0f); glVertex2f(center.x - h / 2, act->yMin + h);
+		glTexCoord2f(0.0f, 1.0f); glVertex2f(center.x + h / 2, act->yMin + h);
+		glTexCoord2f(0.0f, 0.0f); glVertex2f(center.x + h / 2, act->yMin - .01f);
 	}
 	glEnd();
 	glDisable(GL_TEXTURE_2D);
 
 	//draw health bar
-	float width = ((player->xMax - .01f) - (player->xMin + .01f))*player->getHealth() / 100.0f;
+	float width = ((act->xMax - .01f) - (act->xMin + .01f))*act->getHealth() / 100.0f;
 	if (width < 0.0f)
 		width = 0.0f;
 
 	glBegin(GL_QUADS);
 	glColor4f(1.0f, 0.0f, 0.0f, 1.0f);
-	glVertex2f(player->xMin + .01f, player->yMax + .01f);
-	glVertex2f(player->xMin + .01f, player->yMax + .02f);
-	glVertex2f(player->xMin + .01f + width, player->yMax + .02f);
-	glVertex2f(player->xMin + .01f + width, player->yMax + .01f);
+	glVertex2f(act->xMin + .01f, act->yMax + .01f);
+	glVertex2f(act->xMin + .01f, act->yMax + .02f);
+	glVertex2f(act->xMin + .01f + width, act->yMax + .02f);
+	glVertex2f(act->xMin + .01f + width, act->yMax + .01f);
 	glEnd();
 
 	glBegin(GL_LINES);
 	glColor4f(0.0f, 0.0f, 0.0f, 1.0f);
-	glVertex2f(player->xMin + .01f, player->yMax + .01f);
-	glVertex2f(player->xMin + .01f, player->yMax + .02f);
+	glVertex2f(act->xMin + .01f, act->yMax + .01f);
+	glVertex2f(act->xMin + .01f, act->yMax + .02f);
 
-	glVertex2f(player->xMin + .01f, player->yMax + .02f);
-	glVertex2f(player->xMax - .01f, player->yMax + .02f);
+	glVertex2f(act->xMin + .01f, act->yMax + .02f);
+	glVertex2f(act->xMax - .01f, act->yMax + .02f);
 
-	glVertex2f(player->xMax - .01f, player->yMax + .02f);
-	glVertex2f(player->xMax - .01f, player->yMax + .01f);
+	glVertex2f(act->xMax - .01f, act->yMax + .02f);
+	glVertex2f(act->xMax - .01f, act->yMax + .01f);
 
-	glVertex2f(player->xMax - .01f, player->yMax + .01f);
-	glVertex2f(player->xMin + .01f, player->yMax + .01f);
+	glVertex2f(act->xMax - .01f, act->yMax + .01f);
+	glVertex2f(act->xMin + .01f, act->yMax + .01f);
 	glEnd();
 }
 
@@ -445,6 +464,25 @@ void scene::drawCursor()
 	glEnd();
 }
 
+void scene::drawProjectiles()
+{
+	glColor4f(1.0f, 0.0f, 0.0f, 1.0f);
+	glLineWidth(3.0f);
+	glBegin(GL_LINES);
+	for (list<projectile>::iterator itr = projectiles.begin(); itr != projectiles.end();
+		++itr)
+	{
+		//create line of length .05 rotated itr->getRotation() degrees
+		physics::vector vec(.025, itr->getRotation());
+		double horiz = vec.getHorizComp();
+		double vert = vec.getVertComp();
+		glVertex2f((GLfloat) (itr->getLoc().x + horiz), (GLfloat) (itr->getLoc().y + vert));
+		glVertex2f((GLfloat) (itr->getLoc().x - horiz), (GLfloat) (itr->getLoc().y - vert));
+	}
+	glEnd();
+	glLineWidth(1.0f);
+}
+
 void scene::drawOverlay()
 {
 	float gap = .015f, sqWidth = .09f, startX = 0,
@@ -656,4 +694,120 @@ void scene::changeZoom(float diff)
 	m_zoom += diff;
 	if (m_zoom < 0.25f)
 		m_zoom = 0.25f;
+}
+
+void scene::updateProjectiles(long double elapsed)
+{
+	for (list<projectile>::iterator itr = projectiles.begin();
+		itr != projectiles.end(); )
+	{
+		bool deleted = false;
+		projectile temp = projectile(*itr);
+		temp.update(elapsed);
+		if (temp.timedOut())
+		{
+			projectiles.remove(*itr++);
+			deleted = true;
+		}
+		//TODO: once multiple players are impld, need to check if projectile
+		//	is colliding with them too
+		for (list<ground>::iterator gItr = groundObjs.begin();
+			gItr != groundObjs.end(); ++gItr)
+		{
+			//check if colliding currently
+			if (collision::inObject(temp.getLoc(), *gItr))
+			{
+				projectiles.remove(*itr++);
+				deleted = true;
+				break;
+			}
+			//check if went straight through using center point
+			//NOTE: This is rather lacking for fast objects, but is the speed worth
+			//	the trade off?
+			else
+			{
+				primitives::vertex center(temp.getLoc().x - itr->getLoc().x,
+					temp.getLoc().y - itr->getLoc().y);
+				if (collision::inObject(center, *gItr))
+				{
+					projectiles.remove(*itr++);
+					deleted = true;
+					break;
+				}
+			}
+		}
+		if (!deleted)
+		{
+			*itr = temp;
+			++itr;
+		}
+	}
+}
+
+//handle motion of player
+void scene::updateActorLocations(const long double & elapsed, map<int, bool>* keyMap)
+{
+	//figure out which ground object the player is currently above
+	ground *belowPlayer = getCurrentGround(player);
+	ground *abovePlayer = getCurrentCeiling(player);
+	float maxDistance = 0.5f;
+	map<float, ground*> nearby;
+	player->getNearbyWalls(maxDistance, nearby, &groundObjs);
+	if (player->isMoving() && player->m_bOnGround)
+	{
+		if (runChan == NULL)
+		{
+			#ifdef WIN32
+				fSystem->playSound(soundRun, 0, false, &runChan);
+			#else
+				fSystem->playSound(FMOD_CHANNEL_FREE, soundRun, false, &runChan);
+			#endif
+		}
+		else
+		{
+			if (runChan != NULL)
+				runChan->stop();
+			runChan = NULL;
+		}
+	}
+	player->updateLocation(elapsed, belowPlayer, abovePlayer, &nearby, keyMap);
+
+	ground *belowbot1 = getCurrentGround(bot1);
+	ground *abovebot1 = getCurrentCeiling(bot1);
+	maxDistance = 0.5f;
+	map<float, ground*> nearbyBot;
+	bot1->getNearbyWalls(maxDistance, nearbyBot, &groundObjs);
+	bot1->updateLocation(elapsed, belowbot1, abovebot1, &nearbyBot, keyMap);
+}
+
+ground* scene::getCurrentGround(actor* act)
+{
+	//figure out which ground is below given actor
+	float lowestDif = 999.99f;
+	ground *belowPlayer = NULL;
+	for (list<ground>::iterator itr = groundObjs.begin(); itr != groundObjs.end(); ++itr)
+	{
+		if (collision::above(*act, *itr) && act->yMin - itr->yMax < lowestDif)
+		{
+			lowestDif = act->yMin - itr->yMax;
+			belowPlayer = &(*itr);
+		}
+	}
+	return belowPlayer;
+}
+
+ground* scene::getCurrentCeiling(actor* act)
+{
+	//figure out which ground is below given actor
+	float lowestDif = 999.99f;
+	ground *abovePlayer = NULL;
+	for (list<ground>::iterator itr = groundObjs.begin(); itr != groundObjs.end(); ++itr)
+	{
+		if (collision::above(*itr, *act) && itr->yMin - act->yMax < lowestDif)
+		{
+			lowestDif = itr->yMin - act->yMax;
+			abovePlayer = &(*itr);
+		}
+	}
+	return abovePlayer;
 }

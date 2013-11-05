@@ -142,6 +142,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="actor.cpp" />
+	<ClCompile Include="bot.cpp" />
     <ClCompile Include="collision.cpp" />
     <ClCompile Include="entryPoint.cpp" />
     <ClCompile Include="inputHandler.cpp" />
@@ -153,6 +154,7 @@
   <ItemGroup>
     <ClInclude Include="actor.h" />
     <ClInclude Include="baseObject.h" />
+    <ClInclude Include="bot.h" />
     <ClInclude Include="collision.h" />
     <ClInclude Include="ground.h" />
     <ClInclude Include="inputHandler.h" />

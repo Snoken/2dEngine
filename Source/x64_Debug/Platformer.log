@@ -1,10 +1,11 @@
-﻿Build started 10/17/2013 4:18:08 PM.
+﻿Build started 10/20/2013 1:15:39 AM.
      1>Project "C:\code\2dEngine\Source\Platformer.vcxproj" on node 2 (Build target(s)).
      1>ClCompile:
-         C:\VS12\VC\bin\AMD64\CL.exe /c /IC:\code\2dEngine\Source\\..\Includes /IC:\code\2dEngine\Source\\..\Includes\fmod /Zi /nologo /W3 /WX- /Od /D _MBCS /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"C:\code\2dEngine\Source\x64_Debug\\" /Fd"C:\code\2dEngine\Source\x64_Debug\vc120.pdb" /Gd /TP /errorReport:prompt /D_WIN32_WINNT=0x0600 actor.cpp
-         actor.cpp
+         C:\VS12\VC\bin\AMD64\CL.exe /c /IC:\code\2dEngine\Source\\..\Includes /IC:\code\2dEngine\Source\\..\Includes\fmod /Zi /nologo /W3 /WX- /Od /D _MBCS /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"C:\code\2dEngine\Source\x64_Debug\\" /Fd"C:\code\2dEngine\Source\x64_Debug\vc120.pdb" /Gd /TP /errorReport:prompt /D_WIN32_WINNT=0x0600 bot.cpp
+         bot.cpp
        Link:
          C:\VS12\VC\bin\AMD64\link.exe /ERRORREPORT:PROMPT /OUT:"C:\code\2dEngine\Source\x64_Debug\Platformer.exe" /INCREMENTAL /NOLOGO /LIBPATH:C:\code\2dEngine\Source\\..\Libs\x64_dbg SOIL.lib fmodL64_vc.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:\code\2dEngine\Source\x64_Debug\Platformer.pdb" /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:\code\2dEngine\Source\x64_Debug\Platformer.lib" /MACHINE:X64 C:\code\2dEngine\Source\x64_Debug\actor.obj
+         C:\code\2dEngine\Source\x64_Debug\bot.obj
          C:\code\2dEngine\Source\x64_Debug\collision.obj
          C:\code\2dEngine\Source\x64_Debug\entryPoint.obj
          C:\code\2dEngine\Source\x64_Debug\inputHandler.obj
@@ -17,4 +18,4 @@
 
 Build succeeded.
 
-Time Elapsed 00:00:00.80
+Time Elapsed 00:00:00.76
