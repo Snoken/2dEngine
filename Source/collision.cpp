@@ -1,15 +1,12 @@
 #include "collision.h"
 
-bool collision::intersecting( primitives::vertex ends1[2], primitives::vertex ends2[2], float e )
+bool collision::intersecting(primitives::vertex ends1[2], primitives::vertex ends2[2], float e )
 {
 	float a1 = ends1[1].y - ends1[0].y;
 	float b1 = ends1[0].x - ends1[1].x;
-	//the Cs aren't needed since we're not actually solving for where they intersect
-	//float c1 = b1*ends1[0].y + a1*ends1[0].x;
 
 	float a2 = ends2[1].y - ends2[0].y;
 	float b2 = ends2[0].x - ends2[1].x;
-	//float c2 = b2*ends2[0].y + a2*ends2[0].x;
 
 	float det = a1*b2 - a2*b1;
 
@@ -23,32 +20,39 @@ bool collision::intersecting( primitives::vertex ends1[2], primitives::vertex en
 
 bool collision::inObject( primitives::vertex point, baseObject obj )
 {
-	if (point.x < obj.xMin || point.x > obj.xMax || point.y < obj.yMin || point.y > obj.yMax) {
-		// Definitely not within the polygon
-		return false;
-	}
+	//simplifying massively for now, this works fine as long as everything is rectangular
+	return point.x > obj.xMin && point.x < obj.xMax && point.y > obj.yMin && point.y < obj.yMax;
 
-	//ray casting impl
+	//if (point.x < obj.xMin || point.x > obj.xMax || point.y < obj.yMin || point.y > obj.yMax) {
+	//	// Definitely not within the polygon
+	//	return false;
+	//}
 
-	//epsilon to account for float precision
-	float e = ((obj.xMax - obj.xMin) / 100);
+	////ray casting impl
 
-	//points of ray to test
-	primitives::vertex rayPoints[2] = {primitives::vertex(obj.xMin-e, point.y), 
-		primitives::vertex( point.x, point.y )};
+	////epsilon to account for float precision, use smaller dimesion
+	//float e;
+	//if (obj.width < obj.height)
+	//	e = (abs(obj.xMax - obj.xMin) / 100);
+	//else
+	//	e = (abs(obj.yMax - obj.yMin) / 100);
 
-	//start on second object so we're sure there's at least two points
-	for( list<primitives::vertex>::iterator p2 = ++(obj.points.begin()); p2 != obj.points.end(); ++p2 )
-	{
-		list<primitives::vertex>::iterator p1 = p2;
-		--p1;
-		primitives::vertex linePoints[2] = { primitives::vertex(p1->x, p1->y), 
-			primitives::vertex(p2->x, p2->y) };
-		if( intersecting(rayPoints,linePoints, e) )
-			return true;
-	}
+	////points of ray to test
+	//primitives::vertex rayPoints[2] = {primitives::vertex(obj.xMin-e, point.y), 
+	//	primitives::vertex( point.x, point.y )};
 
-	return false;
+	////start on second object so we're sure there's at least two points
+	//for( list<primitives::vertex>::iterator p2 = ++(obj.points.begin()); p2 != obj.points.end(); ++p2 )
+	//{
+	//	list<primitives::vertex>::iterator p1 = p2;
+	//	--p1;
+	//	primitives::vertex linePoints[2] = { primitives::vertex(p1->x, p1->y), 
+	//		primitives::vertex(p2->x, p2->y) };
+	//	if( intersecting(rayPoints,linePoints, e) )
+	//		return true;
+	//}
+
+	//return false;
 }
 
 bool collision::areColliding( baseObject one, baseObject two )

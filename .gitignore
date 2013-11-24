@@ -1,6 +1,7 @@
-*.exe
-*.o
-*.so
-*.obj
-
-*.log
+*/Source/*.exe
+*/Source/*.o
+*/Source/*.so
+*/Source/*.obj
+*/Source/*.sdf
+*/Source/*.opensdf
+*/Source/*.log

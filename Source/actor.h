@@ -61,13 +61,13 @@ public:
 	{
 		init();
 	}
-	void jump()
+	void jump(float percent = 1.0f)
 	{
 		if( !m_bIsRolling && m_bOnGround )
 		{
 			m_frame = 0;
 			m_bOnGround = false;
-			m_movement.setVerticalComp(m_jumpSpeed);
+			m_movement.setVerticalComp(m_jumpSpeed * percent);
 		}
 	}
 	void startRoll( const long double & elapsed );
@@ -87,6 +87,9 @@ public:
 	ActorState groundFrameUpdate( const long double & elapsed, ground *abovePlayer );
 	bool isMoving() { return m_movement.getHorizComp() != 0; }
 	void getNearbyWalls(const float & maxDistance, map<float, ground*> &nearby, list<ground>* allGround);
+
+	float getRunSpeed(){ return m_runSpeed; }
+	double getJumpSpeed(){ return m_jumpSpeed; }
 
 protected:
 	double m_lastRollTime, m_jumpSpeed;

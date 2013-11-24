@@ -156,6 +156,7 @@ void actor::updateLocation( const long double & elapsed, ground *belowPlayer,
 			m_pSlidingOn = NULL;
 			m_movement.setVerticalComp(0);
 			m_fallEnd = origin.y;
+			//TODO: change to be velocity based
 			takeFallDamage( m_fallStart-m_fallEnd );
 			m_fallStart = 999.99f;
 		}
@@ -183,7 +184,7 @@ void actor::updateLocation( const long double & elapsed, ground *belowPlayer,
 				//if object in question is to the right of player move in positive dir
 				if (collision::leftOf(*this, *itr->second) && horiz > 0)
 				{
-					moveByDistanceX(itr->first - .001);
+					moveByDistanceX(itr->first - .001f);
 					m_movement.setHorizontalComp(0);
 					moved = true;
 					break;
@@ -191,7 +192,7 @@ void actor::updateLocation( const long double & elapsed, ground *belowPlayer,
 				//otherwise move by negative amt
 				else if (collision::rightOf(*this, *itr->second) && horiz < 0)
 				{
-					moveByDistanceX(-(itr->first - .001));
+					moveByDistanceX(-(itr->first - .001f));
 					m_movement.setHorizontalComp(0);
 					moved = true;
 					break;
@@ -206,7 +207,7 @@ void actor::updateLocation( const long double & elapsed, ground *belowPlayer,
 void actor::decayMult()
 {
 	double horiz = m_movement.getHorizComp();
-	if( m_bOnGround && horiz != 0 )
+	if( horiz != 0 )
 	{
 		if( abs(horiz) < .05 )
 		{

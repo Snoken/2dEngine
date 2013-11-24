@@ -12,6 +12,7 @@ public:
 		m_movement = physics::vector(v, orig, dest);
 		m_elapsed = m_prevElapsed = m_timeAlive = 0;
 	}
+
 	void update(long double elapsed)
 	{
 		if (m_timeAlive == 0)
@@ -20,12 +21,14 @@ public:
 			m_timeAlive += elapsed;
 		this->move(elapsed);
 	}
-	bool timedOut()
+
+	inline bool timedOut()
 	{
-		if (m_timeAlive > 60)
+		if (m_timeAlive > 30)
 			return true;
 		return false;
 	}
+
 	int getDamage(){ return m_damage; }
 	primitives::vertex getLoc(){ return m_loc; }
 	double getRotation(){ return m_movement.angle; }
@@ -34,8 +37,9 @@ public:
 		return m_movement == rhs.m_movement &&
 			m_loc == rhs.m_loc;
 	}
-private:
 	physics::vector m_movement;
+
+private:
 	primitives::vertex m_loc;
 	bool m_drops;
 	long double m_prevElapsed, m_elapsed, m_timeAlive;

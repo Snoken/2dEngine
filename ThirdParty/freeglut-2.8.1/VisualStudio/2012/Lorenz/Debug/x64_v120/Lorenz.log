@@ -1,0 +1,13 @@
+﻿Build started 10/1/2013 12:01:17 AM.
+     1>Project "C:\Users\Andrew\Downloads\freeglut-2.8.1.tar\freeglut-2.8.1\freeglut-2.8.1\VisualStudio\2012\Lorenz\Lorenz.vcxproj" on node 5 (Build target(s)).
+     1>ClCompile:
+         C:\VS12\VC\bin\AMD64\CL.exe /c /I..\..\..\include /Zi /nologo /W3 /WX- /Od /D WIN32 /D _DEBUG /D _CONSOLE /D _UNICODE /D UNICODE /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Debug\x64_v120\\" /Fd"Debug\x64_v120\vc120.pdb" /Gd /TC /wd4996 /errorReport:prompt ..\..\..\progs\demos\Lorenz\lorenz.c
+         lorenz.c
+       Link:
+         C:\VS12\VC\bin\AMD64\link.exe /ERRORREPORT:PROMPT /OUT:"..\..\..\progs\demos\x64\debug_dll\Lorenz.exe" /INCREMENTAL /NOLOGO /LIBPATH:..\..\..\lib\x64\debug\ kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"..\..\..\progs\demos\x64\debug_dll\Lorenz.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"..\..\..\progs\demos\x64\debug_dll\Lorenz.lib" /MACHINE:X64 Debug\x64_v120\lorenz.obj
+         Lorenz.vcxproj -> C:\Users\Andrew\Downloads\freeglut-2.8.1.tar\freeglut-2.8.1\freeglut-2.8.1\VisualStudio\2012\Lorenz\..\..\..\progs\demos\x64\debug_dll\Lorenz.exe
+     1>Done Building Project "C:\Users\Andrew\Downloads\freeglut-2.8.1.tar\freeglut-2.8.1\freeglut-2.8.1\VisualStudio\2012\Lorenz\Lorenz.vcxproj" (Build target(s)).
+
+Build succeeded.
+
+Time Elapsed 00:00:00.87

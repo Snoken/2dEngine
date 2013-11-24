@@ -19,19 +19,24 @@
 #include "inputHandler.h"
 
 #define LIBGL_ALWAYS_SOFTWARE = 1
-
 using namespace std;
 
-bool bEditing = false;
+//TODO: move this to scene
+//bool determining whether to enable editor
+bool bDrawMenu = false, bDrawOutline = false, bEditing = false;
 
-//global vars
-int width(1600), height(900);
-
+//initial window size, aspect ratio
+int width(1600), height(900), framesElapsed(0);
 float aspect = (float)width/height, trans = 0.0f;
+
+//scene holds all important data, handles updating almost everything
 scene* mainScene = NULL;
+
+//pretty self explanatory, click or press a button, this guy gets used
 inputHandler input;
-long double elapsed, prevElapsed, musicStart;
-bool bDrawMenu, bDrawOutline;
+
+//time keeping
+long double elapsed, prevElapsed, musicStart, lastFPSUpdate;
 
 //glut needs this even if it's empty
 void disp(){}
@@ -67,30 +72,39 @@ void reshape(GLsizei newWidth, GLsizei newHeigth) {  // GLsizei for non-negative
 		gluOrtho2D(-1.0 / zoom, 1.0 / zoom, -1.0 / aspect / zoom, 1.0 / aspect / zoom);
 }
 
+//void function needed for glut
 void keyUp(unsigned char key, int x, int y)
 {
 	input.handleKeyUp(key);
 }
 
+//void function needed for glut
 void keyPress(unsigned char key, int x, int y)
 {
 	input.handleKeyDown(key, bEditing, bDrawMenu);
 }
 
+/* This one gets called every single frame, heavy lifter which executes
+	all calls necessarry on a per-frame basis. */
 void idleFunction(void)
 {
-	//react based on which keys are pressed
+	++framesElapsed;
+	//react based on which keys are pressed, only mouse is used in menu
 	if( !bDrawMenu )
 		input.processKeys(*mainScene, bEditing, elapsed, 
 			mainScene->getFSys(), mainScene->soundJump);
 
-	//save old elapsed time
+	//save old elapsed time, convert from ms to s
 	if (elapsed == 0)
-		prevElapsed = glutGet(GLUT_ELAPSED_TIME)/1000.0;
+		prevElapsed = lastFPSUpdate = glutGet(GLUT_ELAPSED_TIME) / 1000.0;
 	else
 		prevElapsed = elapsed;
+
 	//get new elapsed time
 	elapsed = glutGet(GLUT_ELAPSED_TIME)/1000.0;
+	//TODO: once MP is impld, updateActorLocations will need to be changed to two funcs
+	//	one to move the local player, and one to update AI which is only used by server.
+	//if the menu is not up, update all actors and projectiles
 	if (!bDrawMenu)
 	{
 		mainScene->updateActorLocations(elapsed - prevElapsed, input.getKeyMap());
@@ -103,13 +117,19 @@ void idleFunction(void)
 	camOffset.x /= aspect;
 	camOffset.x *= mainScene->getZoom();
 	mainScene->setCameraOffset(camOffset);
+	//Call reshape to update viewport/camera location
 	reshape(width, height);
 
-	//update windows title
-	string elapsedStr = "Elapsed: " + to_string(elapsed);
-	glutSetWindowTitle( elapsedStr.c_str() );
+	//update window title
+	if (elapsed - lastFPSUpdate > 0.5)
+	{
+		string elapsedStr = "FPS: " + to_string(framesElapsed / (elapsed - lastFPSUpdate));
+		glutSetWindowTitle(elapsedStr.c_str());
+		lastFPSUpdate = elapsed;
+		framesElapsed = 0;
+	}
 
-	//call redrawing of elements
+	//call redrawing of all elements
 	mainScene->redraw(bEditing, bDrawOutline, bDrawMenu);
 }
 
@@ -118,29 +138,38 @@ void passiveMouse(int x, int y)
 	//the cursor and the object rendering use different coord systems,
 	// cursor treats upper right corner as 0, 0 and measures in pixels
 	// rendering treats center of window as 0, 0 and uses floats for 
-	// a percentage of the window.
-	x -= width/2;
-	float mouseX = (float)x/(width/2);
+	// a percentage of the window, so need to convert.
+
+	/*float mouseX = (float)x / width;
+	if (mouseX >= .5f)
+		mouseX = ((mouseX - .5f) * (aspect*2) + mainScene->getPlayer()->origin.x) / mainScene->getZoom();
+	else
+		mouseX = -((.5f - mouseX) * (aspect * 2) + mainScene->getPlayer()->origin.x) / mainScene->getZoom();*/
+
+	x -= width / 2;
+	float mouseX = (float) x / (width / 2);
 	mouseX *= aspect;
-	mouseX += mainScene->getPlayer()->origin.x;
 	mouseX /= mainScene->getZoom();
+
 	y -= height/2;
 	y *= -1;
 	float mouseY = (float)y/(width/2);
 	mouseY *= aspect;
 	mouseY /= mainScene->getZoom();
-	mainScene->setMouseLoc(primitives::vertex(mouseX, mouseY));
+
+	primitives::vertex loc(mouseX, mouseY);
+	mainScene->setMouseLoc(loc);
 }
 
 void mouse(int btn, int state, int x, int y)
 {
-	passiveMouse(x, y);
 	if(btn==GLUT_LEFT_BUTTON && state==GLUT_DOWN) 
 	{
-		input.mouseDown(*mainScene, bDrawMenu, bEditing);
+		input.mouseDown(*mainScene, bDrawMenu, bEditing, aspect);
 	}
 	if(btn==GLUT_LEFT_BUTTON && state==GLUT_UP)
 	{
+		//no action to take unless editing
 		if (bEditing)
 		{
 			bDrawOutline = false;
@@ -149,23 +178,27 @@ void mouse(int btn, int state, int x, int y)
 	}
 	if (btn == GLUT_RIGHT_BUTTON && state == GLUT_DOWN)
 	{
+		//this is just for testing, will be changed as more features are added
 		mainScene->bot1->setDest(mainScene->getMouseLoc());
 	}
 }
 
 void wheel(int wheel, int direction, int x, int y)
 {
+	//pretty simple, change zoom
 	if (direction == 1)
 		mainScene->changeZoom(0.05f);
 	else
 		mainScene->changeZoom(-0.05f);
 }
 
+//This function is called when the mouse moves
 void checkUpdate(int x, int y)
 {
+	passiveMouse(x, y);
+	//if we're editing, update the outline of the shape currently being drawn
 	if (bEditing) 
 	{
-		passiveMouse(x, y);
 		bDrawOutline = true;
 		mainScene->updateOutline(x, y);
 	}
@@ -188,9 +221,10 @@ int main(int argc, char** argv)
 	glutPassiveMotionFunc( passiveMouse );
 	glutMotionFunc( checkUpdate );
 	glutIdleFunc(idleFunction);
-	//Set background color
+	//Set background color (light blue)
 	glClearColor(121.0f/255.0f,175.0f/255.0f,222.0f/255.0f, 1.0);
 	mainScene = new scene(aspect);
+	//run the main loop, this only ends when the window closes
 	glutMainLoop();
 	return 0;
 }

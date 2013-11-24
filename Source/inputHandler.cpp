@@ -87,15 +87,14 @@ void inputHandler::processKeys(scene &mainScene, const bool& bEditing,
 	}
 }
 
-void inputHandler::mouseDown(scene &mainScene, const bool &bDrawMenu, const bool &bEditing)
+void inputHandler::mouseDown(scene &mainScene, const bool &bDrawMenu, const bool &bEditing, float aspect)
 {
 	primitives::vertex clickLoc = mainScene.getMouseLoc();
+
 	if (bDrawMenu)
 	{
-		primitives::vertex adjusted(clickLoc);
-		adjusted.x -= mainScene.getPlayer()->origin.x;
-		baseObject *selected = selection::checkSelectedMenu(adjusted, *mainScene.getMenu());
-		if (selected != NULL && selected->texture == mainScene.tSave)
+		baseObject *selected = selection::checkSelectedMenu(clickLoc, *mainScene.getMenu());
+		if (selected != NULL && selected->texture == mainScene.getSaveTexId())
 		{
 			#ifdef WIN32
 				OPENFILENAME fm;
@@ -109,7 +108,7 @@ void inputHandler::mouseDown(scene &mainScene, const bool &bDrawMenu, const bool
 			levelReadWrite::writeLevel(str, *mainScene.getBg(), 
 				*mainScene.getFg(), *mainScene.getGround());
 		}
-		else if (selected != NULL && selected->texture == mainScene.tLoad)
+		else if (selected != NULL && selected->texture == mainScene.getLoadTexId())
 		{
 			#ifdef WIN32
 				OPENFILENAME fm;
@@ -129,9 +128,7 @@ void inputHandler::mouseDown(scene &mainScene, const bool &bDrawMenu, const bool
 	else if (bEditing)
 	{
 		ground* selected = selection::checkSelected(clickLoc, *mainScene.getGround(), bEditing);
-		primitives::vertex adjusted(clickLoc);
-		adjusted.x -= mainScene.getPlayer()->origin.x;
-		baseObject *overlaySelected = selection::checkSelectedOverlay(adjusted, 
+		baseObject *overlaySelected = selection::checkSelectedOverlay(clickLoc,
 			*mainScene.getOverlay());
 		if (overlaySelected != NULL)
 		{
@@ -152,44 +149,46 @@ void inputHandler::mouseDown(scene &mainScene, const bool &bDrawMenu, const bool
 				}
 			}
 		}
-		float mouseX = floor(mainScene.getMouseLoc().x * 100.0f) / 100.0f;
-		float proximity = fmod(mouseX, .05f);
-		if (abs(proximity) < .025f)
-			mouseX -= proximity;
-		else
-			mouseX >= 0 ? mouseX += .05f - proximity : mouseX += -.05f - proximity;
-
-		float mouseY = floor(mainScene.getMouseLoc().y * 100.0f) / 100.0f;
-		proximity = fmod(mouseY, .05f);
-		if (abs(proximity) < .025f)
-			mouseY -= proximity;
-		else
-			mouseY >= 0 ? mouseY += .05f - proximity : mouseY += -.05f - proximity;
-
-		clickLoc.x = mouseX;
-		clickLoc.y = mouseY;
+		clickLoc.x /= mainScene.getZoom();
+		clickLoc.y /= mainScene.getZoom();
+		clickLoc.roundToNearest(.05f);
 		mainScene.setClickLoc(clickLoc);
 	}
 	else
 	{
 		mainScene.setClickLoc(clickLoc);
-		mainScene.addProjectile();
+		navNode *node = mainScene.checkSelectedNode();
+		if (node != NULL)
+		{
+			cout << "blah\n";
+		}
+		else
+			mainScene.addProjectile();
 	}
 }
 
 void inputHandler::mouseUp(scene &mainScene)
 {
-	float width = mainScene.getDrawSize().x;
-	float height = mainScene.getDrawSize().y;
 	primitives::vertex clickLoc = mainScene.getClickLoc();
-	drawCenter.x = clickLoc.x + width / 2;
-	drawCenter.y = clickLoc.y + height / 2;
+	clickLoc.roundToNearest(.05f);
+
+	primitives::vertex mouseLoc = mainScene.getMouseLoc();
+	mouseLoc.roundToNearest(.05f);
+
+	primitives::vertex drawSize;
+	drawSize.x = mouseLoc.x - clickLoc.x;
+	drawSize.y = mouseLoc.y - clickLoc.y;
+	//drawSize.roundToNearest(.05f);
+	drawCenter.x = clickLoc.x + drawSize.x / 2;
+	drawCenter.y = clickLoc.y + drawSize.y / 2;
+	//drawCenter.roundToNearest(.025f);
 	//prevent accidental creating
-	if (abs(width) > .025 && abs(height) > .025)
+	if (abs(drawSize.x) > .025 && abs(drawSize.y) > .025)
 	{
-		mainScene.getGround()->push_back(baseObject(drawCenter, abs(width), abs(height)));
-		width = height = 0.0f;
-		mainScene.setDrawSize(primitives::vertex(width, height));
+		mainScene.getGround()->push_back(baseObject(drawCenter, drawSize.x, drawSize.y));
+		drawSize.x = drawSize.y = 0.0f;
+		mainScene.setDrawSize(drawSize);
+		mainScene.setClickLoc(primitives::vertex());
 	}
 }
 

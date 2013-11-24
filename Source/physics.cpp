@@ -4,11 +4,7 @@ void physics::vector::applyGravity(double elapsed)
 {
 	if (elapsed == 0.0f)
 		return;
-	double vert = this->getVertComp();
-	double horiz = this->getHorizComp();
-	vert += elapsed * aGravity;
-	this->angle = atan2(vert, horiz) * 180.0 / PI;
-	this->magnitude = sqrt(pow(horiz, 2) + pow(vert, 2));
+	setVerticalComp(getVertComp() + (aGravity*elapsed));
 }
 void physics::vector::changeVerticalComp(double addAmount)
 {
@@ -54,5 +50,23 @@ double physics::apex(vector &motion, primitives::vertex &start)
 double physics::timeToLand(vector &motion, primitives::vertex &start, primitives::vertex &end)
 {
 	double time = apexTime(motion);
-	return time + abs(apex(motion, start) - end.y) / -aGravity;
+	float vf = sqrt(2.0f*-aGravity*abs(apex(motion, start) - end.y));
+	time += vf / -aGravity;
+	return time;
+}
+
+float physics::requiredVertSpeed(float &startHeight, float &endHeight)
+{
+	if (endHeight - startHeight < 0.0f)
+		return 0.0f;
+	else
+		return sqrt(-2.0f * aGravity * (endHeight-startHeight));
+}
+
+float physics::reqSpeedWithTime(float &startHeight, float &endHeight, float &time)
+{
+	if (endHeight - startHeight < 0)
+		return 0;
+	else
+		return ((endHeight - startHeight) - .5f * aGravity * pow(time, 2.0)) / time;
 }

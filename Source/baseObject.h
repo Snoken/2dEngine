@@ -15,32 +15,8 @@ public:
 	float texRotation;
 	bool bSelected;
 
-	void setMaxMin()
-	{
-		list<primitives::vertex>::iterator itr = points.begin();
-		xMax = xMin = itr->x;
-		yMax = yMin = itr->y;
-		for( ; itr != points.end(); ++itr )
-		{
-			if( itr->x > xMax ) xMax = itr->x;
-			else if( itr->x < xMin ) xMin = itr->x;
-
-			if( itr->y > yMax ) yMax = itr->y;
-			else if( itr->y < yMin ) yMin = itr->y;
-		}
-	}
-
-	void init()
-	{
-		setMaxMin();
-		width = xMax - xMin;
-		height = yMax - yMin;
-		texture = 0;
-		bSelected = false;
-		texRotation = 0;
-		for( int i = 0; i < 4; ++i )
-			color[i] = 1.0f;
-	}
+	void setMaxMin();
+	void init();
 	baseObject( primitives::vertex origin, list<primitives::vertex> points ):
 		origin(origin), points(points)
 	{
@@ -86,5 +62,7 @@ public:
 	}
 
 	primitives::vertex origin;
+	friend ostream& operator<<(ostream& stream, const baseObject& obj);
 };
+
 #endif

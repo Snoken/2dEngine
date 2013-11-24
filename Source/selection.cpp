@@ -1,6 +1,8 @@
 #include "selection.h"
 #include <iostream>
 
+//All of these functions check for selection of various object types.
+
 ground* selection::checkSelected(primitives::vertex loc, list<ground> &groundObjs, const bool &bEditing)
 {
 	for (list<ground>::iterator objItr = groundObjs.begin(); objItr != groundObjs.end(); ++objItr)
@@ -9,19 +11,6 @@ ground* selection::checkSelected(primitives::vertex loc, list<ground> &groundObj
 		{
 			objItr->bSelected = !objItr->bSelected;
 			return &(*objItr);
-			//Not sure why i made this so complex?
-			/*if (&(*objItr) == selected)
-			{
-				objItr->bSelected = false;
-				return NULL;
-			}
-			else
-			{
-				if (selected != NULL)
-					selected->bSelected = false;
-				objItr->bSelected = true;
-				return &(*objItr);
-			}*/
 		}
 	}
 	return NULL;
@@ -39,10 +28,8 @@ baseObject* selection::checkSelectedMenu(primitives::vertex loc, list<baseObject
 
 baseObject* selection::checkSelectedOverlay(primitives::vertex loc, list<baseObject> &overlay)
 {
-	cout << loc.x << ", " << loc.y << endl;
 	for (list<baseObject>::iterator objItr = overlay.begin(); objItr != overlay.end(); ++objItr)
 	{
-		cout << "\t" << objItr->origin.x << ", " << objItr->origin.y << endl;
 		if (collision::inObject(loc, *objItr))
 			return &(*objItr);
 	}

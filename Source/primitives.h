@@ -4,7 +4,8 @@
 #include "GL/freeglut.h"
 
 namespace primitives {
-	struct vertex{
+	class vertex{
+	public:
 		GLfloat x, y;
 		vertex(GLfloat x, GLfloat y) :
 			x(x), y(y){}
@@ -16,6 +17,22 @@ namespace primitives {
 		bool operator!=(const vertex& rhs)
 		{
 			return !(*this==rhs);
+		}
+		void roundToNearest(float interval)
+		{
+			x = floor(x * 100.0f) / 100.0f;
+			float proximity = fmod(x, interval);
+			if (abs(proximity) < .025f)
+				x -= proximity;
+			else
+				x >= 0 ? x += interval - proximity : x += -interval - proximity;
+
+			y = floor(y * 100.0f) / 100.0f;
+			proximity = fmod(y, interval);
+			if (abs(proximity) < .025f)
+				y -= proximity;
+			else
+				y >= 0 ? y += interval - proximity : y += -interval - proximity;
 		}
 	};
 }

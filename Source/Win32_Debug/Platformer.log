@@ -1,40 +1,5 @@
-﻿Build started 10/15/2013 6:57:19 PM.
-     1>Project "C:\code\2dEngine\Source\Platformer.vcxproj" on node 2 (Build target(s)).
-     1>ClCompile:
-         C:\VS12\VC\bin\CL.exe /c /IC:\code\2dEngine\Source\\..\Includes /ZI /nologo /W3 /WX- /Od /Oy- /D _MBCS /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"C:\code\2dEngine\Source\Win32_Debug\\" /Fd"C:\code\2dEngine\Source\Win32_Debug\vc120.pdb" /Gd /TP /analyze- /errorReport:prompt actor.cpp collision.cpp entryPoint.cpp inputHandler.cpp levelReadWrite.cpp physics.cpp scene.cpp selection.cpp
-         selection.cpp
-         scene.cpp
-     1>c:\code\2dengine\source\scene.cpp(225): warning C4996: '_snprintf': This function or variable may be unsafe. Consider using _snprintf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-                 c:\vs12\vc\include\stdio.h(346) : see declaration of '_snprintf'
-     1>c:\code\2dengine\source\scene.cpp(234): warning C4996: '_snprintf': This function or variable may be unsafe. Consider using _snprintf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-                 c:\vs12\vc\include\stdio.h(346) : see declaration of '_snprintf'
-     1>c:\code\2dengine\source\scene.cpp(243): warning C4996: '_snprintf': This function or variable may be unsafe. Consider using _snprintf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-                 c:\vs12\vc\include\stdio.h(346) : see declaration of '_snprintf'
-     1>c:\code\2dengine\source\scene.cpp(252): warning C4996: '_snprintf': This function or variable may be unsafe. Consider using _snprintf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-                 c:\vs12\vc\include\stdio.h(346) : see declaration of '_snprintf'
-     1>c:\code\2dengine\source\scene.cpp(261): warning C4996: '_snprintf': This function or variable may be unsafe. Consider using _snprintf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-                 c:\vs12\vc\include\stdio.h(346) : see declaration of '_snprintf'
-     1>c:\code\2dengine\source\scene.cpp(270): warning C4996: '_snprintf': This function or variable may be unsafe. Consider using _snprintf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-                 c:\vs12\vc\include\stdio.h(346) : see declaration of '_snprintf'
-         physics.cpp
-         levelReadWrite.cpp
-         inputHandler.cpp
-         entryPoint.cpp
-         collision.cpp
-         actor.cpp
-         Generating Code...
-       Link:
-         C:\VS12\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"C:\code\2dEngine\Source\Win32_Debug\Platformer.exe" /INCREMENTAL /NOLOGO /LIBPATH:C:\code\2dEngine\Source\\..\Libs\x86_dbg SOIL.lib fmodL_vc.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:\code\2dEngine\Source\Win32_Debug\Platformer.pdb" /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:\code\2dEngine\Source\Win32_Debug\Platformer.lib" /MACHINE:X86 C:\code\2dEngine\Source\Win32_Debug\actor.obj
-         C:\code\2dEngine\Source\Win32_Debug\collision.obj
-         C:\code\2dEngine\Source\Win32_Debug\entryPoint.obj
-         C:\code\2dEngine\Source\Win32_Debug\inputHandler.obj
-         C:\code\2dEngine\Source\Win32_Debug\levelReadWrite.obj
-         C:\code\2dEngine\Source\Win32_Debug\physics.obj
-         C:\code\2dEngine\Source\Win32_Debug\scene.obj
-         C:\code\2dEngine\Source\Win32_Debug\selection.obj
-         Platformer.vcxproj -> C:\code\2dEngine\Source\Win32_Debug\Platformer.exe
-     1>Done Building Project "C:\code\2dEngine\Source\Platformer.vcxproj" (Build target(s)).
+﻿Build started 11/23/2013 11:16:58 PM.
 
 Build succeeded.
 
-Time Elapsed 00:00:05.92
+Time Elapsed 00:00:00.00

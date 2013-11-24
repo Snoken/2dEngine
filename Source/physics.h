@@ -7,7 +7,8 @@ namespace physics
 {
 	#define PI 3.14159265
 	#define aGravity -9.8
-	struct vector{
+	struct vector
+	{
 		double magnitude, angle;
 		vector() : magnitude(0.0f), angle(0.0f){}
 		//use magnitude and destination to find angle
@@ -41,5 +42,11 @@ namespace physics
 	double apexTime(vector &motion);
 	//this method only considers the vertical aspect
 	double timeToLand(vector &motion, primitives::vertex &start, primitives::vertex &end);
+
+	//calculates minimum vertical launch speed to reach given end height
+	float requiredVertSpeed(float &startHeight, float &endHeight);
+
+	//calculates minimum vertical launch speed to reach given end height after given time
+	float reqSpeedWithTime(float &startHeight, float &endHeight, float &time);
 }
 #endif

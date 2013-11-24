@@ -101,6 +101,7 @@
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>$(SolutionDir)\..\Includes;$(SolutionDir)\..\Includes\fmod;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/D_WIN32_WINNT=0x0600 %(AdditionalOptions)</AdditionalOptions>
+      <ObjectFileName>$(IntDir)/%(RelativeDir)/</ObjectFileName>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -142,12 +143,16 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="actor.cpp" />
-	<ClCompile Include="bot.cpp" />
+    <ClCompile Include="baseObject.cpp" />
+    <ClCompile Include="bot.cpp" />
     <ClCompile Include="collision.cpp" />
     <ClCompile Include="entryPoint.cpp" />
     <ClCompile Include="inputHandler.cpp" />
     <ClCompile Include="levelReadWrite.cpp" />
+    <ClCompile Include="navMesh.cpp" />
+    <ClCompile Include="navNode.cpp" />
     <ClCompile Include="physics.cpp" />
+    <ClCompile Include="renderer.cpp" />
     <ClCompile Include="scene.cpp" />
     <ClCompile Include="selection.cpp" />
   </ItemGroup>
@@ -159,10 +164,13 @@
     <ClInclude Include="ground.h" />
     <ClInclude Include="inputHandler.h" />
     <ClInclude Include="levelReadWrite.h" />
+    <ClInclude Include="navMesh.h" />
+    <ClInclude Include="navNode.h" />
     <ClInclude Include="physics.h" />
     <ClInclude Include="primitives.h" />
     <ClInclude Include="projectile.h" />
     <ClInclude Include="prop.h" />
+    <ClInclude Include="renderer.h" />
     <ClInclude Include="scene.h" />
     <ClInclude Include="selection.h" />
   </ItemGroup>
