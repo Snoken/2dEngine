@@ -1,9 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2013
-VisualStudioVersion = 12.0.20617.1 PREVIEW
-MinimumVisualStudioVersion = 10.0.40219.1
+# Visual Studio 2010
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Platformer", "Platformer.vcxproj", "{59D0002E-8B0B-4D81-BC4B-C2AB6AAB9C12}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "AStar", "..\AStar\AStar.vcxproj", "{AEFD81BA-DC8C-49F9-A230-AF820BB8871B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +21,13 @@ Global
 		{59D0002E-8B0B-4D81-BC4B-C2AB6AAB9C12}.Release|Win32.Build.0 = Release|Win32
 		{59D0002E-8B0B-4D81-BC4B-C2AB6AAB9C12}.Release|x64.ActiveCfg = Release|x64
 		{59D0002E-8B0B-4D81-BC4B-C2AB6AAB9C12}.Release|x64.Build.0 = Release|x64
+		{AEFD81BA-DC8C-49F9-A230-AF820BB8871B}.Debug|Win32.ActiveCfg = Debug|Win32
+		{AEFD81BA-DC8C-49F9-A230-AF820BB8871B}.Debug|Win32.Build.0 = Debug|Win32
+		{AEFD81BA-DC8C-49F9-A230-AF820BB8871B}.Debug|x64.ActiveCfg = Debug|Win32
+		{AEFD81BA-DC8C-49F9-A230-AF820BB8871B}.Debug|x64.Build.0 = Debug|Win32
+		{AEFD81BA-DC8C-49F9-A230-AF820BB8871B}.Release|Win32.ActiveCfg = Release|Win32
+		{AEFD81BA-DC8C-49F9-A230-AF820BB8871B}.Release|Win32.Build.0 = Release|Win32
+		{AEFD81BA-DC8C-49F9-A230-AF820BB8871B}.Release|x64.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -533,7 +533,7 @@ void renderer::drawNode(navNode &node)
 		float endX = node.origin.x + (pathItr->moveVector.getHorizComp() * pathItr->travelTime);
 		float endY = node.origin.y +
 			pathItr->moveVector.getVertComp()*pathItr->travelTime +
-			.5f*aGravity*pow(pathItr->travelTime, 2.0f);
+			.5f*aGravity*pow((float)pathItr->travelTime, 2.0f);
 		/*glBegin(GL_POLYGON);
 		glVertex2f(endX + .01, endY +.01);
 		glVertex2f(endX + .01, endY -.01);

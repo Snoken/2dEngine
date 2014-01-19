@@ -68,5 +68,5 @@ float physics::reqSpeedWithTime(float &startHeight, float &endHeight, float &tim
 	if (endHeight - startHeight < 0)
 		return 0;
 	else
-		return ((endHeight - startHeight) - .5f * aGravity * pow(time, 2.0)) / time;
+		return ((endHeight - startHeight) - .5f * aGravity * pow(time, 2.0f)) / time;
 }
