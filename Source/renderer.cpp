@@ -497,8 +497,8 @@ void renderer::drawNavMesh(navMesh &m_mesh)
 {
 	for (list<ground>::iterator objItr = groundObjs->begin(); objItr != groundObjs->end(); ++objItr)
 	{
-		list<navNode> nodes = m_mesh.getNodesForPlatform(&(*objItr));
-		for (list<navNode>::iterator nodeItr = nodes.begin(); nodeItr != nodes.end(); ++nodeItr)
+		list<navNode> m_pNodes = m_mesh.getm_pNodesForPlatform(&(*objItr));
+		for (list<navNode>::iterator nodeItr = m_pNodes.begin(); nodeItr != m_pNodes.end(); ++nodeItr)
 			drawNode(*nodeItr);
 	}
 }

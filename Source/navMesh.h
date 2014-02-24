@@ -12,10 +12,10 @@ public:
 	navMesh(const list<ground> &allGround, const float &maxRunSpeed, const float &maxJumpSpeed)
 	{
 		srand((unsigned)time(NULL));
-		generateAllNodes(allGround, maxRunSpeed, maxJumpSpeed);
+		generateAllm_pNodes(allGround, maxRunSpeed, maxJumpSpeed);
 	}
-	//fetch all navNodes associated with the specified platform
-	list<navNode> getNodesForPlatform(ground *lookUp) 
+	//fetch all navm_pNodes associated with the specified platform
+	list<navNode> getm_pNodesForPlatform(ground *lookUp) 
 	{
 		map<ground*, list<navNode>>::iterator loc = m_mesh.find(lookUp);
 		if (loc == m_mesh.end())
@@ -24,9 +24,9 @@ public:
 	}
 	void removeEntry(ground *remove){ m_mesh.erase(remove); }
 private:
-	void generateAllNodes(const list<ground> &allGround, const float &maxRunSpeed, const float &maxJumpSpeed);
-	void colorNodes();
-	//this class stores it's data by associating a list of navNodes with each platform
+	void generateAllm_pNodes(const list<ground> &allGround, const float &maxRunSpeed, const float &maxJumpSpeed);
+	void colorm_pNodes();
+	//this class stores it's data by associating a list of navm_pNodes with each platform
 	map<ground*, list<navNode>> m_mesh;
 };
 

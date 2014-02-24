@@ -1,0 +1,66 @@
+Visiting vertex with ID of 1
+Visiting vertex with ID of 2
+Visiting vertex with ID of 4
+Visiting vertex with ID of 7
+Visiting vertex with ID of 5
+Visiting vertex with ID of 3
+Visiting vertex with ID of 3
+Visiting vertex with ID of 6
+Visiting vertex with ID of 8
+Visiting vertex with ID of 9
+1  2  4  7  5  3  3  6  8  9  
+
+1  2  4  7  5  3  3  6  8  9  
+
+Visiting vertex with ID of 1 (cost 0)
+Visiting vertex with ID of 3 (cost 1)
+Visiting vertex with ID of 5 (cost 2)
+Visiting vertex with ID of 8 (cost 3)
+Visiting vertex with ID of 6 (cost 4)
+Visiting vertex with ID of 6 (cost 5)
+
+Open List: 
+	id: 3 g: 2 h: 1
+	id: 2 g: 2 h: 2
+1  
+
+Expanding node 3
+Open List: 
+	id: 2 g: 2 h: 2
+	id: 5 g: 4 h: 1
+	id: 6 g: 4 h: 1
+1  3  
+
+Expanding node 2
+Open List: 
+	id: 5 g: 4 h: 1
+	id: 6 g: 4 h: 1
+	id: 4 g: 4 h: 2
+1  2  
+
+Expanding node 5
+Open List: 
+	id: 6 g: 4 h: 1
+	id: 4 g: 4 h: 2
+	id: 8 g: 6 h: 1
+	id: 7 g: 6 h: 2
+1  3  5  
+
+Expanding node 6
+1  3  5  
+
+Expanding node 4
+1  3  5  
+
+Expanding node 8
+Open List: 
+	id: 7 g: 6 h: 2
+	id: 9 g: 8 h: 1
+1  3  5  8  
+
+Expanding node 7
+1  3  5  8  
+
+Expanding node 9
+1  3  5  8  9  
+

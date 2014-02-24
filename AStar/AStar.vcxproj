@@ -13,12 +13,14 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{AEFD81BA-DC8C-49F9-A230-AF820BB8871B}</ProjectGuid>
     <RootNamespace>AStar</RootNamespace>
+    <ProjectName>Search</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v120</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -61,11 +63,19 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="AStar.h" />
+    <ClInclude Include="BFS.h" />
+    <ClInclude Include="DFS.h" />
     <ClInclude Include="Graph.h" />
+    <ClInclude Include="GreedyBestFirst.h" />
+    <ClInclude Include="Search.h" />
     <ClInclude Include="Tree.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AStar.cpp" />
+    <ClCompile Include="BFS.cpp" />
+    <ClCompile Include="DFS.cpp" />
+    <ClCompile Include="Graph.cpp" />
+    <ClCompile Include="GreedyBestFirst.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

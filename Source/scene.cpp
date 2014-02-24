@@ -224,7 +224,7 @@ ground* scene::getCurrentCeiling(baseObject* act)
 
 navNode* scene::checkSelectedNode()
 {
-	for (list<ground>::iterator objItr = groundObjs.begin(); objItr != groundObjs.end(); ++objItr)
+	/*for (list<ground>::iterator objItr = groundObjs.begin(); objItr != groundObjs.end(); ++objItr)
 	{
 		list<navNode> nodes = m_mesh->getNodesForPlatform(&(*objItr));
 		for (list<navNode>::iterator itr = nodes.begin(); itr != nodes.end(); ++itr)
@@ -234,6 +234,6 @@ navNode* scene::checkSelectedNode()
 				return &(*itr);
 			}
 		}		
-	}
+	}*/
 	return NULL;
 }
