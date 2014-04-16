@@ -206,6 +206,12 @@ ground* scene::getCurrentGround(baseObject* act)
 	return belowPlayer;
 }
 
+ground* scene::getCurrentGround(primitives::vertex loc)
+{
+	baseObject obj(loc, .01, .01);
+	return getCurrentGround(&obj);
+}
+
 ground* scene::getCurrentCeiling(baseObject* act)
 {
 	//figure out which ground is below given actor
@@ -224,7 +230,7 @@ ground* scene::getCurrentCeiling(baseObject* act)
 
 navNode* scene::checkSelectedNode()
 {
-	/*for (list<ground>::iterator objItr = groundObjs.begin(); objItr != groundObjs.end(); ++objItr)
+	for (list<ground>::iterator objItr = groundObjs.begin(); objItr != groundObjs.end(); ++objItr)
 	{
 		list<navNode> nodes = m_mesh->getNodesForPlatform(&(*objItr));
 		for (list<navNode>::iterator itr = nodes.begin(); itr != nodes.end(); ++itr)
@@ -233,7 +239,7 @@ navNode* scene::checkSelectedNode()
 			{
 				return &(*itr);
 			}
-		}		
-	}*/
+		}
+	}
 	return NULL;
 }

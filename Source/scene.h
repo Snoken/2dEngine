@@ -41,7 +41,7 @@ public:
 		initSounds();
 
 		m_zoom = 1.0;
-		m_mesh = new navMesh(groundObjs, player->getRunSpeed(), player->getJumpSpeed());
+		m_mesh = new navMesh(groundObjs, player->getRunSpeed(), (float)player->getJumpSpeed());
 
 		//Uncomment to enable music, currently disabled for testing
 		#ifdef WIN32
@@ -73,6 +73,7 @@ public:
 
 	void updateActorLocations(const long double & elapsed, map<int, bool>* keyMap);
 	ground* getCurrentGround(baseObject* act);
+	ground* getCurrentGround(primitives::vertex loc);
 	ground* getCurrentCeiling(baseObject* act);
 
 	void setMouseLoc(primitives::vertex v) { m_mouseLoc = v; }
@@ -92,6 +93,7 @@ public:
 	list<prop>* getFg()	{ return &foregroundObjs; }
 	list<ground>* getGround() {	return &groundObjs; }
 	list<baseObject>* getOverlay() { return &overlay; }
+	navMesh* getMesh() { return m_mesh; }
 	float getZoom()	{ return m_zoom; }
 	FMOD::System* getFSys() { return fSystem; }
 

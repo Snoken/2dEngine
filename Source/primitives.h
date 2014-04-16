@@ -1,7 +1,7 @@
 #ifndef PRIMITIVES_H
 #define PRIMITIVES_H
 #include <iostream>
-#include "GL/freeglut.h"
+#include "GL/glew.h"
 
 namespace primitives {
 	class vertex{

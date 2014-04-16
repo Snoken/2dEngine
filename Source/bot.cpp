@@ -1,66 +1,82 @@
 #include "bot.h"
+bool bot::findPath(Graph* navSpace)
+{
+	if (m_pSearch)
+		delete m_pSearch;
+
+	Graph::Vertex* start = NULL;
+	Graph::Vertex* end = NULL;
+	for (list<Graph::Vertex>::iterator itr = navSpace->getVertices()->begin(); 
+		itr != navSpace->getVertices()->end(); ++itr)
+	{
+		if (*itr->plat == *m_start)
+			start = &*itr;
+		if (*itr->plat == *m_dest)
+			end = &*itr;
+	}
+	if (*start->plat == *end->plat)
+	{ 
+		// add code for simple move within current platform
+		m_simpleMove = true;
+		return false;
+	}
+	m_pSearch = new AStar(navSpace, start, end);
+	m_pSearch->setVerbose(true);
+	return m_pSearch->DoSearch();
+}
+
 void bot::updateLocation(const long double & elapsed, ground *belowPlayer,
 	ground *abovePlayer, map<float, ground*> *nearby, map<int, bool> *keyMap)
 {
-	updateSpeed();
-	//this condition is hit if bot has landed on ground after a jump has
-	//	been completed
-	if (m_locBeforeJump != primitives::vertex() && m_bOnGround)
+	if (m_dest)
 	{
-		//if bot ended up in same spot, it's stuck, cancel move order
-		if (m_locBeforeJump == origin)
-			m_dest = primitives::vertex();
-		m_locBeforeJump = primitives::vertex();
-	}
-
-	ground* nearestFacing = NULL;
-	float distance;
-	double horiz = m_movement.getHorizComp();
-	for (map<float, ground*>::iterator itr = nearby->begin(); itr != nearby->end();
-		++itr)
-	{
-		if (collision::leftOf(*this, *itr->second) && horiz > 0)
+		Graph::Edge* currEdge = NULL;
+		// if we haven't gone anywhere on the path yet, set iterator to first edge in path
+		if (!m_pSearch->getPath()->edges.empty())
 		{
-			nearestFacing = itr->second;
-			distance = itr->first;
-		}
-		else if (collision::rightOf(*this, *itr->second) && horiz < 0)
-		{
-			nearestFacing = itr->second;
-			distance = -itr->first;
-		}
-	}
+			currEdge = &*m_pSearch->getPath()->edges.front();
 
-	if (nearestFacing != NULL && needsToJump(nearestFacing, distance, elapsed))
-	{
-		m_locBeforeJump = origin;
-		jump();
+			// it can be assumed at this point that the bot is on the same platform as the 
+			//	next node in the path
+
+			//if close to navnode set vertical speed where it needs to be
+			if (!m_bOnGround)
+			{
+			}
+			else if (abs(origin.x - currEdge->startNode->origin.x) < .005)
+			{
+				m_movement = currEdge->moveVector;
+				jump(currEdge->moveVector.getVertComp() / m_jumpSpeed + .075);
+				m_pSearch->getPath()->edges.pop_front();
+				// TODO: make the bot go approach node properly instead of magically getting right speed
+			}
+			else if (origin.x < currEdge->startNode->origin.x)
+				updateMult(elapsed, "right");
+			else if (origin.x > currEdge->startNode->origin.x)
+				updateMult(elapsed, "left");
+		}
+		else
+			m_dest = NULL;
 	}
-	else if (m_dest != primitives::vertex() &&
-		m_dest.y > yMin+.15)
+	else if (m_simpleMove)
 	{
-		m_locBeforeJump = origin;
-		jump();
+		if (abs(origin.x - m_destLoc.x) < .03)
+			m_simpleMove = false;
+		else if (origin.x < m_destLoc.x)
+			updateMult(elapsed, "right");
+		else if (origin.x > m_destLoc.x)
+			updateMult(elapsed, "left");
 	}
-	this->actor::updateLocation(elapsed, belowPlayer, abovePlayer, nearby, keyMap);
+	else if (m_bOnGround)
+		decayMult(elapsed);
+	actor::updateLocation(elapsed, belowPlayer, abovePlayer, nearby, keyMap);
 }
 
-void bot::updateSpeed()
+void bot::colorPath(Tree::Path path)
 {
-	//if no move order set, slow down and return
-	if (m_dest == primitives::vertex())
-	{
-		decayMult();
-		return;
-	}
-
-	//if dest reached, clear move order
-	if (atDest())
-		m_dest = primitives::vertex();
-	else if (origin.x < m_dest.x)
-		moveRight();
-	else if (origin.x > m_dest.x)
-		moveLeft();
+	for (deque<Graph::Edge*>::iterator itr = path.edges.begin(); itr != path.edges.end(); ++itr)
+		(*itr)->startNode->color[0] = (*itr)->startNode->color[1] = (*itr)->startNode->color[2] =
+		(*itr)->startNode->color[3] = fmod((float) rand(), 255.0f) / 255.0f;
 }
 
 bool bot::scalable(baseObject obj)
@@ -70,41 +86,7 @@ bool bot::scalable(baseObject obj)
 	return physics::apex(jumpVec, primitives::vertex(origin.x, yMin)) >= obj.yMax;
 }
 
-void bot::moveLeft()
-{
-	if (!m_bOnWall)
-	{
-		m_bFacingRight = false;
-		updateMult();
-	}
-}
-
-void bot::moveRight()
-{
-	if (!m_bOnWall)
-	{
-		m_bFacingRight = true;
-		updateMult();
-	}
-}
-
 bool bot::needsToJump(ground *nearest, float distance, const long double &elapsed)
 {
-	if (abs(distance) > abs(origin.x - m_dest.x))
-		return false;
-	else if (!scalable(*nearest))
-		return false;
-	double horiz = m_movement.getHorizComp();
-	primitives::vertex target;
-	if (distance > 0.0f)
-		target = primitives::vertex(nearest->xMin, nearest->yMax);
-	else
-		target = primitives::vertex(nearest->xMax, nearest->yMax);
-	physics::vector jumpVec = physics::vector(m_movement);
-	jumpVec.setVerticalComp(m_jumpSpeed);
-	double landTime = physics::timeToLand(jumpVec, primitives::vertex(origin.x, yMin), target);
-	if (distance > horiz*landTime)
-		return false;
-	else
-		return true;
+	return false;
 }

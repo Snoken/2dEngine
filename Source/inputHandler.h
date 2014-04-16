@@ -30,7 +30,7 @@ public:
 	void handleKeyUp(unsigned char key);
 	void handleKeyDown(unsigned char key, bool& bEditing, bool& bDrawMenu);
 	void processKeys(scene &mainScene, const bool& bEditing, const long double& elapsed, 
-		FMOD::System* fSystem, FMOD::Sound* soundJump);
+		const double &timeDiff, FMOD::System* fSystem, FMOD::Sound* soundJump);
 	void mouseDown(scene &mainScene, const bool &bDrawMenu, const bool &bEditing, float aspect);
 	void mouseUp(scene &mainScene);
 	map<int, bool>* getKeyMap()

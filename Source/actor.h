@@ -25,7 +25,7 @@ public:
 	{
 		m_state = IDLE;
 		m_walkSpeed = 0.2f;
-		m_runSpeed = 1.0f;
+		m_runSpeed = 1.3f;
 		m_jumpSpeed = 3.0;
 		m_slideSpeed = -0.3f;
 		m_rollSpeed = .8f;
@@ -40,6 +40,7 @@ public:
 		m_pSlidingOn = NULL;
 		m_climbAngle = 45.0f;
 		m_lastRollTime = 0;
+		m_timeToTopSpeed = 0.25;
 	}
 	actor(primitives::vertex origin, list<primitives::vertex> points):baseObject(origin, points)
 	{
@@ -81,8 +82,8 @@ public:
 		ground *abovePlayer, map<float, ground*> *nearby, map<int, bool> *keyMap);
 	float getHealth(){ return m_health; }
 	void takeDamage(float pain){ m_health -= pain; }
-	void decayMult();
-	void updateMult();
+	void decayMult(const long double & elapsed);
+	void updateMult(const long double & elapsed, string dir);
 	void airFrameUpdate();
 	ActorState groundFrameUpdate( const long double & elapsed, ground *abovePlayer );
 	bool isMoving() { return m_movement.getHorizComp() != 0; }
@@ -98,7 +99,8 @@ protected:
 	physics::vector m_movement;
 	float m_health, m_fallStart, m_fallEnd, m_slideSpeed,
 		m_walkSpeed, m_runSpeed, m_damageDistance, 
-		m_timeToImpact, m_climbAngle, m_rollSpeed, m_oldHeight;
+		m_timeToImpact, m_climbAngle, m_rollSpeed, m_oldHeight,
+		m_timeToTopSpeed, m_timeToStop;
 	float travelTime( float d, float v, float a );
 	void applyGravity( double elapsed );
 	float timeToCollisionY( baseObject one );

@@ -204,9 +204,10 @@ void actor::updateLocation( const long double & elapsed, ground *belowPlayer,
 	}
 }
 
-void actor::decayMult()
+void actor::decayMult(const long double & elapsed)
 {
 	double horiz = m_movement.getHorizComp();
+	double timeToStop = 0.25;
 	if( horiz != 0 )
 	{
 		if( abs(horiz) < .05 )
@@ -215,46 +216,39 @@ void actor::decayMult()
 			m_movement.setHorizontalComp(0);
 		}
 		else
-			m_movement.setHorizontalComp(horiz/1.5);
+		{
+			double mult;
+			if (horiz < 0)
+				mult = -1.0;
+			else
+				mult = 1.0;
+			m_movement.setHorizontalComp(horiz - (elapsed/timeToStop * m_runSpeed * mult));
+		}
 	}
 }
 
-void actor::updateMult()
+void actor::updateMult(const long double & elapsed, string dir)
 {
 	//only change mult if player is not rolling
+	double timeToTopSpeed = 0.25;
  	if( !m_bIsRolling )
 	{
 		//only do if player is not on wall and not facing right
 		double horiz = m_movement.getHorizComp();
-		if( !m_bOnWall && !m_bFacingRight )
+		double mult;
+		if (dir == "left")
 		{
-			//logic for ramping up move speed
-			if (horiz > 0.0001)
-			{
-				decayMult();
-				return;
-			}
-			else if (horiz < 0.0001 && horiz > -0.0001 )
-				horiz = -0.1*m_runSpeed;
-			else if (horiz < 0)
-				horiz = horiz*1.2;
-			if (horiz < -m_runSpeed)
-				horiz = -m_runSpeed;
+			mult = -1.0;
+			m_bFacingRight = false;
 		}
-		else if( !m_bOnWall && m_bFacingRight )
+		else
 		{
-			if (horiz < -0.0001)
-			{
-				decayMult();
-				return;
-			}
-			else if (horiz < 0.0001 && horiz > -0.0001)
-				horiz = 0.1*m_runSpeed;
-			else if (horiz > 0)
-				horiz = horiz*1.2;
-			if (horiz > m_runSpeed)
-				horiz = m_runSpeed;
+			mult = 1.0;
+			m_bFacingRight = true;
 		}
+		horiz += elapsed / timeToTopSpeed * m_runSpeed * mult;
+		if (abs(horiz) > m_runSpeed)
+			horiz = m_runSpeed * mult;
 		m_movement.setHorizontalComp(horiz);
 	}
 }

@@ -99,7 +99,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(SolutionDir)\..\Includes;$(SolutionDir)\..\Includes\fmod;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\..\Includes\glew\include;$(SolutionDir)\..\Includes\glm;$(SolutionDir)\..\Includes\glm\gtc;$(SolutionDir)\..\Includes;$(SolutionDir)\..\Includes\fmod;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/D_WIN32_WINNT=0x0600 %(AdditionalOptions)</AdditionalOptions>
       <ObjectFileName>$(IntDir)/%(RelativeDir)/</ObjectFileName>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -144,12 +144,15 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="actor.cpp" />
+    <ClCompile Include="AStar.cpp" />
     <ClCompile Include="baseObject.cpp" />
     <ClCompile Include="bot.cpp" />
     <ClCompile Include="collision.cpp" />
     <ClCompile Include="entryPoint.cpp" />
+    <ClCompile Include="Graph.cpp" />
     <ClCompile Include="inputHandler.cpp" />
     <ClCompile Include="levelReadWrite.cpp" />
+    <ClCompile Include="main.cpp" />
     <ClCompile Include="navMesh.cpp" />
     <ClCompile Include="navNode.cpp" />
     <ClCompile Include="physics.cpp" />
@@ -159,21 +162,26 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="actor.h" />
+    <ClInclude Include="AStar.h" />
     <ClInclude Include="baseObject.h" />
     <ClInclude Include="bot.h" />
     <ClInclude Include="collision.h" />
+    <ClInclude Include="Graph.h" />
     <ClInclude Include="ground.h" />
     <ClInclude Include="inputHandler.h" />
     <ClInclude Include="levelReadWrite.h" />
     <ClInclude Include="navMesh.h" />
     <ClInclude Include="navNode.h" />
+    <ClInclude Include="PathFinder.h" />
     <ClInclude Include="physics.h" />
     <ClInclude Include="primitives.h" />
     <ClInclude Include="projectile.h" />
     <ClInclude Include="prop.h" />
     <ClInclude Include="renderer.h" />
     <ClInclude Include="scene.h" />
+    <ClInclude Include="Search.h" />
     <ClInclude Include="selection.h" />
+    <ClInclude Include="Tree.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -2,12 +2,12 @@
 
 void renderer::redraw(bool& bEditing, bool& bDrawOutline, bool& bDrawMenu, actor &player, actor &bot1,
 	float zoom, ground &selected, float aspect, primitives::vertex mouseLoc, primitives::vertex clickLoc,
-	primitives::vertex drawSize, navMesh &m_mesh)
+	primitives::vertex drawSize, navMesh &mesh)
 {
 	glClear(GL_COLOR_BUFFER_BIT);
 
 	//each draw call is essentially a layer, the first call is the furthest back
-	//drawSky();
+	drawSky();
 	drawBackground(bEditing);
 	drawGround(bEditing);
 	if (bEditing)
@@ -16,7 +16,7 @@ void renderer::redraw(bool& bEditing, bool& bDrawOutline, bool& bDrawMenu, actor
 	drawActor(bot1);
 	drawProjectiles();
 	drawForeground();
-	drawNavMesh(m_mesh);
+	drawNavMesh(mesh);
 	if (bDrawOutline)
 		drawOutline(clickLoc, drawSize, zoom);
 	if (bEditing)
@@ -198,17 +198,17 @@ void renderer::drawOutline(primitives::vertex clickLoc,	primitives::vertex drawS
 		glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 		glBegin(GL_LINES);
 
-		glVertex2f(clickLoc.x / zoom, clickLoc.y / zoom);
-		glVertex2f(clickLoc.x / zoom, (clickLoc.y + drawSize.y) / zoom);
+		glVertex2f(clickLoc.x, clickLoc.y);
+		glVertex2f(clickLoc.x, (clickLoc.y + drawSize.y));
 
-		glVertex2f(clickLoc.x / zoom, (clickLoc.y + drawSize.y) / zoom);
-		glVertex2f((clickLoc.x + drawSize.x) / zoom, (clickLoc.y + drawSize.y) / zoom);
+		glVertex2f(clickLoc.x, (clickLoc.y + drawSize.y));
+		glVertex2f((clickLoc.x + drawSize.x), (clickLoc.y + drawSize.y));
 
-		glVertex2f((clickLoc.x + drawSize.x) / zoom, clickLoc.y + drawSize.y);
-		glVertex2f((clickLoc.x + drawSize.x) / zoom, clickLoc.y / zoom);
+		glVertex2f((clickLoc.x + drawSize.x), clickLoc.y + drawSize.y);
+		glVertex2f((clickLoc.x + drawSize.x), clickLoc.y);
 
-		glVertex2f((clickLoc.x + drawSize.x) / zoom, clickLoc.y / zoom);
-		glVertex2f(clickLoc.x / zoom, clickLoc.y / zoom);
+		glVertex2f((clickLoc.x + drawSize.x), clickLoc.y);
+		glVertex2f(clickLoc.x, clickLoc.y);
 
 		//draw subdivision lines
 		if (abs(drawSize.x) > abs(drawSize.y))
@@ -218,8 +218,8 @@ void renderer::drawOutline(primitives::vertex clickLoc,	primitives::vertex drawS
 			drawSize.x >= 0 ? incDist = abs(drawSize.y) : incDist = -abs(drawSize.y);
 			while (abs(incDist) <= abs(drawSize.x))
 			{
-				glVertex2f((clickLoc.x + incDist) / zoom, (clickLoc.y + drawSize.y) / zoom);
-				glVertex2f((clickLoc.x + incDist) / zoom, clickLoc.y / zoom);
+				glVertex2f((clickLoc.x + incDist), (clickLoc.y + drawSize.y));
+				glVertex2f((clickLoc.x + incDist), clickLoc.y);
 				if (drawSize.x >= 0)
 					incDist += abs(drawSize.y);
 				else
@@ -497,7 +497,7 @@ void renderer::drawNavMesh(navMesh &m_mesh)
 {
 	for (list<ground>::iterator objItr = groundObjs->begin(); objItr != groundObjs->end(); ++objItr)
 	{
-		list<navNode> m_pNodes = m_mesh.getm_pNodesForPlatform(&(*objItr));
+		list<navNode> m_pNodes = m_mesh.getNodesForPlatform(&(*objItr));
 		for (list<navNode>::iterator nodeItr = m_pNodes.begin(); nodeItr != m_pNodes.end(); ++nodeItr)
 			drawNode(*nodeItr);
 	}
@@ -523,8 +523,8 @@ void renderer::drawNode(navNode &node)
 		for (int i = 0; i < segments; ++i)
 		{
 			glVertex2f(loc.x, loc.y);
-			loc.x += pathItr->travelTime / (float) segments * moveVec.getHorizComp();
-			float vi = moveVec.getVertComp();
+			loc.x += (float)pathItr->travelTime / (float) segments * (float)moveVec.getHorizComp();
+			float vi = (float)moveVec.getVertComp();
 			moveVec.applyGravity(pathItr->travelTime / (float) segments);
 			loc.y += (vi + moveVec.getVertComp())/2 * (pathItr->travelTime / (float) segments);
 			glVertex2f(loc.x, loc.y);

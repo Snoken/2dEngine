@@ -51,33 +51,34 @@ void inputHandler::handleKeyDown(unsigned char key, bool& bEditing, bool& bDrawM
 }
 
 void inputHandler::processKeys(scene &mainScene, const bool& bEditing, 
-	const long double& elapsed, FMOD::System* fSystem, FMOD::Sound* soundJump)
+	const long double& elapsed, const double &timeDiff, FMOD::System* fSystem, FMOD::Sound* soundJump)
 {
 	if (bEditing && keyMap.find(DEL)->second == true)
 		mainScene.tryDelete();
 	actor* player = mainScene.getPlayer();
 	if (keyMap.find('a')->second == false && keyMap.find('d')->second == false && !player->m_bIsRolling)
 		//decay the multiplier if no keys are being pressed
-		player->decayMult();
+		player->decayMult(timeDiff);
 	if (keyMap.find('s')->second == true)
 	{
 		if (player->m_bOnGround && !player->m_bIsRolling && player->isMoving())
-			player->startRoll(elapsed);
+			player->startRoll(timeDiff);
 	}
 	else if (keyMap.find('a')->second == true)
 	{
 		if (!player->m_bOnWall)
 			player->m_bFacingRight = false;
-		player->updateMult();
+		player->updateMult(timeDiff, "left");
 	}
 	else if (keyMap.find('d')->second == true)
 	{
 		if (!player->m_bOnWall)
 			player->m_bFacingRight = true;
-		player->updateMult();
+		player->updateMult(timeDiff, "right");
 	}
 	if (keyMap.find('w')->second == true || keyMap.find(SPACEBAR)->second == true)
 	{
+		if (player->m_bOnGround)
 			#ifdef WIN32
 				fSystem->playSound(soundJump, 0, false, 0);
 			#else
@@ -93,6 +94,8 @@ void inputHandler::mouseDown(scene &mainScene, const bool &bDrawMenu, const bool
 
 	if (bDrawMenu)
 	{
+		primitives::vertex loc = clickLoc;
+		clickLoc.x -= mainScene.getPlayer()->origin.x;
 		baseObject *selected = selection::checkSelectedMenu(clickLoc, *mainScene.getMenu());
 		if (selected != NULL && selected->texture == mainScene.getSaveTexId())
 		{
@@ -137,7 +140,7 @@ void inputHandler::mouseDown(scene &mainScene, const bool &bDrawMenu, const bool
 			{
 				if (itr->bSelected)
 				{
-					//This bit of nonsense is a hack to use texture id numbers to
+					//This bit of nonsense is a hack to use texture plat numbers to
 					//  detect which button has been clicked
 					//TODO: find a better way, enum of buttons?
 					if (overlaySelected->texture == 290)
@@ -149,8 +152,8 @@ void inputHandler::mouseDown(scene &mainScene, const bool &bDrawMenu, const bool
 				}
 			}
 		}
-		clickLoc.x /= mainScene.getZoom();
-		clickLoc.y /= mainScene.getZoom();
+		/*clickLoc.x /= mainScene.getZoom();
+		clickLoc.y /= mainScene.getZoom();*/
 		clickLoc.roundToNearest(.05f);
 		mainScene.setClickLoc(clickLoc);
 	}

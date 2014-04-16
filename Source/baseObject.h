@@ -1,7 +1,6 @@
 #ifndef BASEOBJECT_H
 #define BASEOBJECT_H
 #include <list>
-#include <GL/freeglut.h>
 #include "primitives.h"
 
 using namespace std;
@@ -53,11 +52,10 @@ public:
 		this->texture = texture;
 	}
 	bool operator==(const baseObject &other) const{
-		bool returnMe = true;
-		origin.x == other.origin.x ? returnMe = true: returnMe = false;
-		origin.y == other.origin.y ? returnMe = true: returnMe = false;
-		width == other.width ? returnMe = true: returnMe = false;
-		height == other.height ? returnMe = true: returnMe = false;
+		bool returnMe = origin.x == other.origin.x;
+		returnMe = returnMe && (origin.y == other.origin.y);
+		returnMe = returnMe && (width == other.width);
+		returnMe = returnMe && (height == other.height);
 		return returnMe;
 	}
 

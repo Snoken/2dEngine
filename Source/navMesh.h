@@ -5,17 +5,20 @@
 #include <random>
 
 #include "navNode.h"
+#include "Graph.h"
 
 class navMesh
 {
 public:
 	navMesh(const list<ground> &allGround, const float &maxRunSpeed, const float &maxJumpSpeed)
 	{
+		// Seed RNG for node coloring
 		srand((unsigned)time(NULL));
-		generateAllm_pNodes(allGround, maxRunSpeed, maxJumpSpeed);
+		generateAllNodes(allGround, maxRunSpeed, maxJumpSpeed);
+		buildGraph(allGround);
 	}
-	//fetch all navm_pNodes associated with the specified platform
-	list<navNode> getm_pNodesForPlatform(ground *lookUp) 
+	//fetch all navNodes associated with the specified platform
+	list<navNode> getNodesForPlatform(ground *lookUp) 
 	{
 		map<ground*, list<navNode>>::iterator loc = m_mesh.find(lookUp);
 		if (loc == m_mesh.end())
@@ -23,11 +26,16 @@ public:
 		return loc->second;
 	}
 	void removeEntry(ground *remove){ m_mesh.erase(remove); }
+	Graph* getNavGraph(){ return m_navGraph; }
+
 private:
-	void generateAllm_pNodes(const list<ground> &allGround, const float &maxRunSpeed, const float &maxJumpSpeed);
-	void colorm_pNodes();
-	//this class stores it's data by associating a list of navm_pNodes with each platform
+	void generateAllNodes(const list<ground> &allGround, const float &maxRunSpeed, const float &maxJumpSpeed);
+	double calculateCost(navNode::navInfo info);
+	void buildGraph(const list<ground> &allGround);
+	void colorNodes();
+	//this class stores it's data by associating a list of navNodes with each platform
 	map<ground*, list<navNode>> m_mesh;
+	Graph* m_navGraph;
 };
 
 #endif

@@ -23,8 +23,13 @@ public:
 		double travelTime;
 		//this bool is for use during generation of the navmesh (avoids infinite looping)
 		bool visited;
-		navInfo(ground * dest, physics::vector moveVector, double travelTime) :
+		navInfo(ground* dest, physics::vector moveVector, double travelTime) :
 			dest(dest), moveVector(moveVector), travelTime(travelTime), visited(false) {}
+		navInfo(ground* dest) : dest(dest){}
+		bool operator==(const navInfo &other) const
+		{
+			return *dest == *other.dest;
+		}
 	};
 
 	navNode(primitives::vertex origin, ground *below, const list<ground> &allGround,

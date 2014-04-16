@@ -26,7 +26,7 @@ void navNode::generateDests(const list<ground> &allGround, const float &maxSpeed
 	{
 		jumpVec = physics::vector(maxJumpSpeed, 90.0f);
 		//no need for navigation to same object
-		if (&(*itr) == m_source)
+		if (*itr == *m_source)
 			continue;
 		//if top of object is higher than max height, not reachable
 		//	subtracting .01 to account for requirements of horizontal movement
@@ -55,13 +55,10 @@ void navNode::generateDests(const list<ground> &allGround, const float &maxSpeed
 		if (reqVertSpeed > 0)
 		{
 			//if the x travel takes longer, adjust jump strength, if y takes longer adjust speed
-			//cout << "ydif: " << yDif << endl;
 			float minHorizTime = xDif / maxSpeed;
 			if (minHorizTime > landTime)
 			{
-				//cout << "time " << minHorizTime << endl;
 				float reqVertSpeed = physics::reqSpeedWithTime(origin.y, landLoc.y, minHorizTime);
-				//cout << reqVertSpeed << endl;
 				if (reqVertSpeed > maxJumpSpeed)
 					continue;
 				
@@ -109,7 +106,8 @@ void navNode::generateDests(const list<ground> &allGround, const float &maxSpeed
 		if (collision::inObject(loc, *itr))
 		{
 			m_dests.push_back(navInfo((ground*) &(*itr), jumpVec, landTime));
-				cout << "added a path\n";
+				cout << "\tAdded a path to platform at (" << itr->origin.x << ", " 
+					<< itr->origin.y << ")" << endl;
 		}
 	}
 }

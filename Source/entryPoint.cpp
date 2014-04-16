@@ -1,7 +1,8 @@
 #define _CRT_SECURE_NO_DEPRECATE
+
 #include "soil/SOIL.h"
-#include "GL/freeglut.h"
-#include "GL/glut.h"
+//#include "GL/freeglut.h"
+//#include "GL/glut.h"
 
 #include <string>
 #include <map>
@@ -18,7 +19,6 @@
 #include "scene.h"
 #include "inputHandler.h"
 
-#define LIBGL_ALWAYS_SOFTWARE = 1
 using namespace std;
 
 //TODO: move this to scene
@@ -78,6 +78,30 @@ void keyUp(unsigned char key, int x, int y)
 	input.handleKeyUp(key);
 }
 
+void passiveMouse(int x, int y)
+{
+	//the cursor and the object rendering use different coord systems,
+	// cursor treats upper right corner as 0, 0 and measures in pixels
+	// rendering treats center of window as 0, 0 and uses floats for 
+	// a percentage of the window, so need to convert.
+
+	x -= width / 2;
+	float mouseX = (float) x / (width / 2);
+	mouseX *= aspect;
+	mouseX /= mainScene->getZoom();
+	mouseX += mainScene->getPlayer()->origin.x;
+
+	y -= height / 2;
+	y *= -1;
+	float mouseY = (float) y / (width / 2);
+	mouseY *= aspect;
+	mouseY /= mainScene->getZoom();
+	//mouseX += mainScene->getPlayer()->origin.y;
+
+	primitives::vertex loc(mouseX, mouseY);
+	mainScene->setMouseLoc(loc);
+}
+
 //void function needed for glut
 void keyPress(unsigned char key, int x, int y)
 {
@@ -88,12 +112,6 @@ void keyPress(unsigned char key, int x, int y)
 	all calls necessarry on a per-frame basis. */
 void idleFunction(void)
 {
-	++framesElapsed;
-	//react based on which keys are pressed, only mouse is used in menu
-	if( !bDrawMenu )
-		input.processKeys(*mainScene, bEditing, elapsed, 
-			mainScene->getFSys(), mainScene->soundJump);
-
 	//save old elapsed time, convert from ms to s
 	if (elapsed == 0)
 		prevElapsed = lastFPSUpdate = glutGet(GLUT_ELAPSED_TIME) / 1000.0;
@@ -101,7 +119,14 @@ void idleFunction(void)
 		prevElapsed = elapsed;
 
 	//get new elapsed time
-	elapsed = glutGet(GLUT_ELAPSED_TIME)/1000.0;
+	elapsed = glutGet(GLUT_ELAPSED_TIME) / 1000.0;
+
+	++framesElapsed;
+	//react based on which keys are pressed, only mouse is used in menu
+	if( !bDrawMenu )
+		input.processKeys(*mainScene, bEditing, elapsed, 
+			elapsed - prevElapsed, mainScene->getFSys(), mainScene->soundJump);
+
 	//TODO: once MP is impld, updateActorLocations will need to be changed to two funcs
 	//	one to move the local player, and one to update AI which is only used by server.
 	//if the menu is not up, update all actors and projectiles
@@ -133,34 +158,6 @@ void idleFunction(void)
 	mainScene->redraw(bEditing, bDrawOutline, bDrawMenu);
 }
 
-void passiveMouse(int x, int y)
-{
-	//the cursor and the object rendering use different coord systems,
-	// cursor treats upper right corner as 0, 0 and measures in pixels
-	// rendering treats center of window as 0, 0 and uses floats for 
-	// a percentage of the window, so need to convert.
-
-	/*float mouseX = (float)x / width;
-	if (mouseX >= .5f)
-		mouseX = ((mouseX - .5f) * (aspect*2) + mainScene->getPlayer()->origin.x) / mainScene->getZoom();
-	else
-		mouseX = -((.5f - mouseX) * (aspect * 2) + mainScene->getPlayer()->origin.x) / mainScene->getZoom();*/
-
-	x -= width / 2;
-	float mouseX = (float) x / (width / 2);
-	mouseX *= aspect;
-	mouseX /= mainScene->getZoom();
-
-	y -= height/2;
-	y *= -1;
-	float mouseY = (float)y/(width/2);
-	mouseY *= aspect;
-	mouseY /= mainScene->getZoom();
-
-	primitives::vertex loc(mouseX, mouseY);
-	mainScene->setMouseLoc(loc);
-}
-
 void mouse(int btn, int state, int x, int y)
 {
 	if(btn==GLUT_LEFT_BUTTON && state==GLUT_DOWN) 
@@ -179,7 +176,10 @@ void mouse(int btn, int state, int x, int y)
 	if (btn == GLUT_RIGHT_BUTTON && state == GLUT_DOWN)
 	{
 		//this is just for testing, will be changed as more features are added
-		mainScene->bot1->setDest(mainScene->getMouseLoc());
+		mainScene->bot1->setDest(mainScene->getMouseLoc(),
+			mainScene->getCurrentGround(mainScene->bot1),
+			mainScene->getCurrentGround(mainScene->getMouseLoc()), 
+			mainScene->getMesh()->getNavGraph());
 	}
 }
 

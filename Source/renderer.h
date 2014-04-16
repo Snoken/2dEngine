@@ -3,8 +3,17 @@
 #include <vector>
 #include <time.h>
 
-#include "GL/freeglut.h"
-#include "GL/glut.h"
+// OpenGL and GLEW Header Files and Libraries
+#include <GL/glew.h>
+#include <GL/wglew.h>
+#include <GL/freeglut.h>
+#pragma comment(lib, "glew32.lib")
+#pragma comment(lib, "opengl32.lib")
+
+// GLM include files
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>  
+
 #include "soil/SOIL.h"
 
 #include "actor.h"
