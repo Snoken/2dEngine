@@ -21,7 +21,8 @@ void navNode::generateDests(const list<ground> &allGround, const float &maxSpeed
 	//find the highest a jump can go
 	physics::vector jumpVec = physics::vector();
 	jumpVec.setVerticalComp(maxJumpSpeed);
-	float maxHeight = (float) physics::apex(jumpVec, primitives::vertex(origin.x, origin.y));
+	primitives::vertex vert(origin.x, origin.y);
+	float maxHeight = (float) physics::apex(jumpVec, vert);
 	for (list<ground>::const_iterator itr = allGround.begin(); itr != allGround.end(); ++itr)
 	{
 		jumpVec = physics::vector(maxJumpSpeed, 90.0f);
@@ -35,7 +36,8 @@ void navNode::generateDests(const list<ground> &allGround, const float &maxSpeed
 		//find horizontal distance
 		float xDif, landTime;
 		primitives::vertex landLoc;
-		if (collision::leftOf(origin, (baseObject)*itr))
+		baseObject checkObj = (baseObject)*itr;
+		if (collision::leftOf(origin, checkObj))
 		{
 			xDif = abs(itr->xMin - origin.x);
 			landLoc = primitives::vertex(itr->xMin, itr->yMax);

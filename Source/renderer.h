@@ -1,11 +1,12 @@
 #ifndef RENDERER_H
 #define RENDERER_H
+#define GLM_FORCE_RADIANS
+
 #include <vector>
 #include <time.h>
 
 // OpenGL and GLEW Header Files and Libraries
 #include <GL/glew.h>
-#include <GL/wglew.h>
 #include <GL/freeglut.h>
 #pragma comment(lib, "glew32.lib")
 #pragma comment(lib, "opengl32.lib")

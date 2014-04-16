@@ -1,5 +1,7 @@
 #ifndef SCENE_H
 #define SCENE_H
+#define GLM_FORCE_RADIANS
+
 #include "actor.h"
 #include "ground.h"
 #include "prop.h"
@@ -47,7 +49,7 @@ public:
 		#ifdef WIN32
 				//fSystem->playSound(soundMusic, 0, false, 0);
 		#else
-				fSystem->playSound(FMOD_CHANNEL_FREE, soundMusic, false, 0);
+				//fSystem->playSound(FMOD_CHANNEL_FREE, soundMusic, false, 0);
 		#endif
 	}
 	void redraw(bool& bEditing, bool& bDrawOutline, bool& bDrawMenu)

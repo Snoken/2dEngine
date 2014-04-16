@@ -38,6 +38,7 @@ namespace physics
 			return this->magnitude * sin(this->angle * PI / 180.0f);
 		}
 	};
+	// TODO: why does this take a reference?
 	double apex(vector &motion, primitives::vertex &start);
 	double apexTime(vector &motion);
 	//this method only considers the vertical aspect

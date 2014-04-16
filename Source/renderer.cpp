@@ -1,4 +1,5 @@
 #include "renderer.h"
+#include <sstream>
 
 void renderer::redraw(bool& bEditing, bool& bDrawOutline, bool& bDrawMenu, actor &player, actor &bot1,
 	float zoom, ground &selected, float aspect, primitives::vertex mouseLoc, primitives::vertex clickLoc,
@@ -571,55 +572,43 @@ void renderer::loadTextures()
 
 	for (int i = 1; i <= 4; ++i)
 	{
-		char* num = new char;
-		snprintf(num, sizeof(int) , "%d", i);
 		string location = "../Assets/Textures/character/stand/";
-		location.append(num);
+		location.append(to_string(i));
 		location.append(".png");
 		tCharStand.push_back(loadTexture(location.c_str()));
 	}
 	for (int i = 1; i <= 8; ++i)
 	{
-		char* num = new char;
-		snprintf(num, sizeof(int) , "%d", i);
 		string location = "../Assets/Textures/character/walk/";
-		location.append(num);
+		location.append(to_string(i));
 		location.append(".png");
 		tCharRun.push_back(loadTexture(location.c_str()));
 	}
 	for (int i = 1; i <= 5; ++i)
 	{
-		char* num = new char;
-		snprintf(num, sizeof(int) , "%d", i);
 		string location = "../Assets/Textures/character/jump/";
-		location.append(num);
+		location.append(to_string(i));
 		location.append(".png");
 		tCharJump.push_back(loadTexture(location.c_str()));
 	}
 	for (int i = 1; i <= 4; ++i)
 	{
-		char* num = new char;
-		snprintf(num, sizeof(int) , "%d", i);
 		string location = "../Assets/Textures/character/roll/";
-		location.append(num);
+		location.append(to_string(i));
 		location.append(".png");
 		tCharRoll.push_back(loadTexture(location.c_str()));
 	}
 	for (int i = 1; i <= 5; ++i)
 	{
-		char* num = new char;
-		snprintf(num, sizeof(int) , "%d", i);
 		string location = "../Assets/Textures/walls/stone/";
-		location.append(num);
+		location.append(to_string(i));
 		location.append(".png");
 		tWallsStone.push_back(loadTexture(location.c_str()));
 	}
 	for (int i = 1; i <= 4; ++i)
 	{
-		char* num = new char;
-		snprintf(num, sizeof(int) , "%d", i);
 		string location = "../Assets/Textures/walls/wood/";
-		location.append(num);
+		location.append(to_string(i));
 		location.append(".png");
 		tWallsWood.push_back(loadTexture(location.c_str()));
 	}

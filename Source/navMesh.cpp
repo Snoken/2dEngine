@@ -1,4 +1,5 @@
 #include "navMesh.h"
+#include <algorithm>
 
 void navMesh::generateAllNodes(const list<ground> &allGround, const float &maxRunSpeed, const float &maxJumpSpeed)
 {

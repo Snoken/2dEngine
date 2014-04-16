@@ -170,13 +170,15 @@ void scene::updateActorLocations(const long double & elapsed, map<int, bool>* ke
 			#ifdef WIN32
 				fSystem->playSound(soundRun, 0, false, &runChan);
 			#else
-				fSystem->playSound(FMOD_CHANNEL_FREE, soundRun, false, &runChan);
+				//fSystem->playSound(FMOD_CHANNEL_FREE, soundRun, false, &runChan);
 			#endif
 		}
 		else
 		{
+			#ifdef WIN32
 			if (runChan != NULL)
 				runChan->stop();
+			#endif
 			runChan = NULL;
 		}
 	}

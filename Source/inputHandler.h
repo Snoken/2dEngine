@@ -1,8 +1,9 @@
 #ifndef INPUTHANDLER_H
 #define INPUTHANDLER_H
 
-#define WIN = WIN32 || WIN64
-#ifdef WIN
+#define GLM_FORCE_RADIANS
+
+#if defined(WIN32)
 	#include <Windows.h>
 	#include <direct.h>
 	#include "fmod/fmod.hpp"

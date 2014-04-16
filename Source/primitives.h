@@ -2,6 +2,7 @@
 #define PRIMITIVES_H
 #include <iostream>
 #include "GL/glew.h"
+#include <cmath>
 
 namespace primitives {
 	class vertex{

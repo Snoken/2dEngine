@@ -83,7 +83,8 @@ bool bot::scalable(baseObject obj)
 {
 	physics::vector jumpVec = physics::vector(m_movement);
 	jumpVec.setVerticalComp(m_jumpSpeed);
-	return physics::apex(jumpVec, primitives::vertex(origin.x, yMin)) >= obj.yMax;
+	primitives::vertex maxHeight(origin.x, yMin);
+	return physics::apex(jumpVec, maxHeight) >= obj.yMax;
 }
 
 bool bot::needsToJump(ground *nearest, float distance, const long double &elapsed)

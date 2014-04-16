@@ -1,4 +1,5 @@
 #define _CRT_SECURE_NO_DEPRECATE
+#define GLM_FORCE_RADIANS
 
 #include "soil/SOIL.h"
 //#include "GL/freeglut.h"
