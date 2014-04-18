@@ -16,7 +16,7 @@ void navMesh::generateAllNodes(const list<ground> &allGround, const float &maxRu
 		//if there are any paths, add it to the list
 		list<navNode> nodes;
 		if (!node.getDests().empty())
-		nodes.push_back(node);
+			nodes.push_back(node);
 
 		//create a navNode for the right edge
 		node = navNode(primitives::vertex(itr->xMax, itr->yMax), (ground*) &(*itr), allGround, 

@@ -40,6 +40,7 @@ public:
 		generateDests(allGround, maxSpeed, maxJumpSpeed, playerSize);
 	}
 	list<navInfo> getDests(){ return m_dests; }
+	friend ostream& operator<<(ostream& stream, const navNode& obj);
 
 private:
 	bool obstructed(const primitives::vertex &loc, const primitives::vertex &top,

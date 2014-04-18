@@ -163,7 +163,7 @@ void inputHandler::mouseDown(scene &mainScene, const bool &bDrawMenu, const bool
 		navNode *node = mainScene.checkSelectedNode();
 		if (node != NULL)
 		{
-			cout << "blah\n";
+			cout << *node << endl;
 		}
 		else
 			mainScene.addProjectile();

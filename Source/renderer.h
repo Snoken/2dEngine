@@ -6,12 +6,12 @@
 #include <time.h>
 
 // OpenGL and GLEW Header Files and Libraries
-#if _WIN32
-	#include "GL/freeglut.h"
-#else
+
+#ifndef _WIN32
 	#include "GL/glew.h"
 #endif
 #pragma comment(lib, "opengl32.lib")
+#include "GL/freeglut.h"
 
 // GLM include files
 //#include <glm/glm.hpp>

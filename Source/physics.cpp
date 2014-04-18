@@ -49,10 +49,19 @@ double physics::apex(vector &motion, primitives::vertex &start)
 
 double physics::timeToLand(vector &motion, primitives::vertex &start, primitives::vertex &end)
 {
-	double time = apexTime(motion);
-	float vf = sqrt(2.0f*-aGravity*abs(apex(motion, start) - end.y));
-	time += vf / -aGravity;
-	return time;
+	if(motion.getVertComp() != 0.0f)
+	{
+		double time = apexTime(motion);
+		float vf = sqrt(2.0f*-aGravity*abs(apex(motion, start) - end.y));
+		time += vf / -aGravity;
+		return time;
+	}
+	else
+	{
+		float d = start.y - end.y;
+		double retval = d / (0.5*-aGravity);
+		return sqrt(retval);
+	}
 }
 
 float physics::requiredVertSpeed(float &startHeight, float &endHeight)

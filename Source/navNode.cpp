@@ -106,18 +106,23 @@ void navNode::generateDests(const list<ground> &allGround, const float &maxSpeed
 		physics::vector moveVec = jumpVec;
 		//this int decides how many points along the path to check
 		int segments = 40;
+		float horizSpeed = (float)moveVec.getHorizComp();
 		for (int i = 0; i <= segments + 20; ++i)
 		{
-			if (i >= segments && collision::inObject(loc, *itr))
+			bool inObj = collision::inObject(loc, *itr);
+			if (i >= segments && inObj)
 			{
-				m_dests.push_back(navInfo((ground*) &(*itr), jumpVec, landTime));
+				m_dests.push_back(navInfo((ground*)&(*itr), jumpVec, landTime));
 				cout << "\tAdded a path to platform at (" << itr->origin.x << ", "
 					<< itr->origin.y << ")" << endl;
+				break;
 			}
 			primitives::vertex top(loc.x, loc.y + playerSize.y);
-			if (obstructed(loc, top, allGround, *itr))
+			bool isObst = obstructed(loc, top, allGround, *itr);
+			if(isObst)
+			{
 				break;
-			float horizSpeed = (float)moveVec.getHorizComp();
+			}
 			loc.x += landTime / (float) segments * horizSpeed;
 			float vi = moveVec.getVertComp();
 			moveVec.applyGravity(landTime / (float) segments);
@@ -125,3 +130,18 @@ void navNode::generateDests(const list<ground> &allGround, const float &maxSpeed
 		}
 	}
 }
+
+ostream& operator<<(ostream& stream, const navNode& obj)
+{
+	stream << *obj.m_source << endl;
+	stream << "Paths:" << endl;
+	for(list<navNode::navInfo>::const_iterator itr = obj.m_dests.begin(); itr != obj.m_dests.end(); ++itr)
+	{
+		stream << "\tDestination: " << *itr->dest << endl;
+		physics::vector vec = itr->moveVector;
+		stream << "\t  Horizontal Speed: " << vec.getHorizComp() << endl;
+		stream << "\t  Vertical Speed: " << vec.getVertComp() << endl;
+	}
+	return stream;
+}
+

@@ -165,7 +165,7 @@ void mouse(int btn, int state, int x, int y)
 	{
 		input.mouseDown(*mainScene, bDrawMenu, bEditing, aspect);
 	}
-	if(btn==GLUT_LEFT_BUTTON && state==GLUT_UP)
+	else if(btn==GLUT_LEFT_BUTTON && state==GLUT_UP)
 	{
 		//no action to take unless editing
 		if (bEditing)
@@ -174,7 +174,7 @@ void mouse(int btn, int state, int x, int y)
 			input.mouseUp(*mainScene);
 		}
 	}
-	if (btn == GLUT_RIGHT_BUTTON && state == GLUT_DOWN)
+	else if (btn == GLUT_RIGHT_BUTTON && state == GLUT_DOWN)
 	{
 		//this is just for testing, will be changed as more features are added
 		mainScene->bot1->setDest(mainScene->getMouseLoc(),
@@ -182,6 +182,12 @@ void mouse(int btn, int state, int x, int y)
 			mainScene->getCurrentGround(mainScene->getMouseLoc()), 
 			mainScene->getMesh()->getNavGraph());
 	}
+	//scroll up
+	else if (btn == 3)
+                mainScene->changeZoom(0.05f);
+        else if (btn == 4)
+                mainScene->changeZoom(-0.05f);
+
 }
 
 void wheel(int wheel, int direction, int x, int y)
@@ -224,7 +230,12 @@ int main(int argc, char** argv)
 	glutIdleFunc(idleFunction);
 	//Set background color (light blue)
 	glClearColor(121.0f/255.0f,175.0f/255.0f,222.0f/255.0f, 1.0);
-	mainScene = new scene(aspect);
+	string levelFile;
+	if(argc == 2)
+		levelFile = string(argv[1]);
+	else
+		levelFile = "testlvl.lvl";
+	mainScene = new scene(aspect, levelFile);
 	//run the main loop, this only ends when the window closes
 	glutMainLoop();
 	return 0;

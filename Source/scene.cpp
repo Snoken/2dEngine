@@ -32,9 +32,9 @@ void scene::tryDelete()
 	}
 }
 
-void scene::initObjects()
+void scene::initObjects(const string& levelFile)
 {
-	levelReadWrite::readLevel("test3.lvl", backgroundObjs, foregroundObjs,
+	levelReadWrite::readLevel(levelFile.c_str(), backgroundObjs, foregroundObjs,
 		groundObjs);
 }
 

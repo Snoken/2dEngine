@@ -28,7 +28,7 @@
 class scene
 {
 public:
-	scene(float aspect) : m_aspect(aspect), player(NULL), selected(NULL)
+	scene(float aspect, const string& levelFile) : m_aspect(aspect), player(NULL), selected(NULL)
 	{
 		//needs to happen first so textures are initialized
 		renderEng = new renderer(&backgroundObjs, &foregroundObjs, &groundObjs, &menuItems,
@@ -37,7 +37,7 @@ public:
 		player = new actor(primitives::vertex(0.0f, 0.0f), .2f*(2.0f / 3.0f), .195f);
 		bot1 = new bot(primitives::vertex(-1.0f, 0.0f), .2f*(2.0f / 3.0f), .195f);
 
-		initObjects();
+		initObjects(levelFile);
 		initOverlay();
 		initMenu();
 		initSounds();
@@ -107,7 +107,7 @@ public:
 	FMOD::Sound      *soundJump, *soundMusic, *soundRun; //sound that will be loaded and played
 
 private:
-	void initObjects();
+	void initObjects(const string& levelFile);
 	void initOverlay();
 	void initMenu();
 	void loadTextures();
