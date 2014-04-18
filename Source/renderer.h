@@ -6,14 +6,16 @@
 #include <time.h>
 
 // OpenGL and GLEW Header Files and Libraries
-#include <GL/glew.h>
-#include <GL/freeglut.h>
-#pragma comment(lib, "glew32.lib")
+#if _WIN32
+	#include "GL/freeglut.h"
+#else
+	#include "GL/glew.h"
+#endif
 #pragma comment(lib, "opengl32.lib")
 
 // GLM include files
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>  
+//#include <glm/glm.hpp>
+//#include <glm/gtc/matrix_transform.hpp>  
 
 #include "soil/SOIL.h"
 

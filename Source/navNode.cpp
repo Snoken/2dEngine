@@ -1,22 +1,20 @@
 #include "navNode.h"
 
-bool navNode::obstructed(const primitives::vertex &loc, const list<ground> &allGround, const ground &dest)
+bool navNode::obstructed(const primitives::vertex &loc, const primitives::vertex &top, 
+	const list<ground> &allGround, const ground &dest)
 {
 	//go through all ground objects, see if collision
 	for (list<ground>::const_iterator gItr = allGround.begin();
 		gItr != allGround.end(); ++gItr)
 	{
-		//not an obstruction if it's the source or dest
-		if (&(*gItr) == m_source || &(*gItr) == &dest)
-			continue;
-		if (collision::inObject(loc, *gItr))
+		if (collision::inObject(loc, *gItr) || collision::inObject(top, *gItr))
 			return true;
 	}
 	return false;
 }
 
 void navNode::generateDests(const list<ground> &allGround, const float &maxSpeed,
-	const float &maxJumpSpeed)
+	const float &maxJumpSpeed, const primitives::vertex& playerSize )
 {
 	//find the highest a jump can go
 	physics::vector jumpVec = physics::vector();
@@ -41,16 +39,29 @@ void navNode::generateDests(const list<ground> &allGround, const float &maxSpeed
 		{
 			xDif = abs(itr->xMin - origin.x);
 			landLoc = primitives::vertex(itr->xMin, itr->yMax);
+			if (origin.y < landLoc.y)
+			{
+				landLoc.x -= playerSize.x / 2;
+			}
 		}
 		else
 		{
 			xDif = abs(origin.x - itr->xMax);
 			landLoc = primitives::vertex(itr->xMax, itr->yMax);
+			if (origin.y < landLoc.y)
+			{
+				landLoc.x += playerSize.x / 2;
+			}
 		}
 		if (xDif > 1.5f && itr->yMax >= origin.y)
 			continue;
 
 		float yDif = abs(itr->yMax - m_source->yMax);
+		if (origin.y < landLoc.y)
+		{
+			landLoc.y += yDif * 0.25f;
+			xDif -= playerSize.x / 2;
+		}
 		float reqVertSpeed = physics::requiredVertSpeed(origin.y, landLoc.y);
 		jumpVec.setVerticalComp(reqVertSpeed);
 		landTime = physics::timeToLand(jumpVec, origin, landLoc);
@@ -95,21 +106,22 @@ void navNode::generateDests(const list<ground> &allGround, const float &maxSpeed
 		physics::vector moveVec = jumpVec;
 		//this int decides how many points along the path to check
 		int segments = 40;
-		for (int i = 0; i <= segments; ++i)
+		for (int i = 0; i <= segments + 20; ++i)
 		{
-			if (obstructed(loc, allGround, *itr))
+			if (i >= segments && collision::inObject(loc, *itr))
+			{
+				m_dests.push_back(navInfo((ground*) &(*itr), jumpVec, landTime));
+				cout << "\tAdded a path to platform at (" << itr->origin.x << ", "
+					<< itr->origin.y << ")" << endl;
+			}
+			primitives::vertex top(loc.x, loc.y + playerSize.y);
+			if (obstructed(loc, top, allGround, *itr))
 				break;
 			float horizSpeed = (float)moveVec.getHorizComp();
 			loc.x += landTime / (float) segments * horizSpeed;
 			float vi = moveVec.getVertComp();
 			moveVec.applyGravity(landTime / (float) segments);
 			loc.y += (vi + moveVec.getVertComp()) / 2 * (landTime / (float) segments);
-		}
-		if (collision::inObject(loc, *itr))
-		{
-			m_dests.push_back(navInfo((ground*) &(*itr), jumpVec, landTime));
-				cout << "\tAdded a path to platform at (" << itr->origin.x << ", " 
-					<< itr->origin.y << ")" << endl;
 		}
 	}
 }

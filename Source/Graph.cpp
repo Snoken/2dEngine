@@ -89,7 +89,7 @@ void Graph::updateCosts(primitives::vertex startLoc)
 	{
 		double xDiff = startLoc.x - itr->startNode->origin.x;
 		double yDiff = startLoc.y - itr->startNode->origin.y;
-		itr->cost = sqrt(pow(xDiff, 2.0) + pow(yDiff, 2.0));
+		itr->cost = sqrt(pow(xDiff, 2.0) + pow(yDiff, 2.0)) + 4;
 	}
 }
 

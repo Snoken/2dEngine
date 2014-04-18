@@ -1,7 +1,11 @@
 #ifndef PRIMITIVES_H
 #define PRIMITIVES_H
 #include <iostream>
-#include "GL/glew.h"
+#if _WIN32
+	#include "GL/freeglut.h"
+#else
+	#include "GL/glew.h"
+#endif
 #include <cmath>
 
 namespace primitives {

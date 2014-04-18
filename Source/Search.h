@@ -21,6 +21,15 @@ public:
 		delete m_searchTree;
 	}
 
+	void resetTree(Graph::Vertex* start)
+	{
+		delete m_searchTree;
+		m_searchTree = new Tree(start);
+		m_openList.clear();
+		m_closedList.clear();
+	}
+	void setEnd(Graph::Vertex* end){ m_end = end; }
+
 	// The return value of this function indicates whether a path from start to end was found.
 	virtual bool DoSearch(Tree::Node* currNode) = 0;
 	Tree::Path* getPath(){ return &m_path; }
@@ -64,7 +73,7 @@ public:
 protected:
 	Graph* m_searchSpace;
 	Tree::Path m_path;
-	int pathCost;
+	double pathCost;
 	deque<Tree::Node*> m_openList;
 	// map structure being used for quick lookup of where vertex is in tree
 	map<Graph::Vertex*, Tree::Node*> m_closedList;

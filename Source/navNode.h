@@ -33,18 +33,19 @@ public:
 	};
 
 	navNode(primitives::vertex origin, ground *below, const list<ground> &allGround,
-		const float &maxSpeed, const float &maxJumpSpeed) :
+		const float &maxSpeed, const float &maxJumpSpeed, const primitives::vertex& playerSize) :
 		baseObject(origin, .025f, .025f), m_source(below)
 	{
 		m_dests = list<navInfo>();
-		generateDests(allGround, maxSpeed, maxJumpSpeed);
+		generateDests(allGround, maxSpeed, maxJumpSpeed, playerSize);
 	}
 	list<navInfo> getDests(){ return m_dests; }
 
 private:
-	bool obstructed(const primitives::vertex &loc, const list<ground> &allGround, const ground &dest);
+	bool obstructed(const primitives::vertex &loc, const primitives::vertex &top,
+		const list<ground> &allGround, const ground &dest);
 	void generateDests(const list<ground> &allGround, const float &maxSpeed,
-		const float &maxJumpSpeed);
+		const float &maxJumpSpeed, const primitives::vertex& playerSize);
 
 	//Since each node represents a link (path) between two objects, 
 	//	source represent the object the node is on, and 

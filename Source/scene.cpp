@@ -34,7 +34,7 @@ void scene::tryDelete()
 
 void scene::initObjects()
 {
-	levelReadWrite::readLevel("testlvl.lvl", backgroundObjs, foregroundObjs,
+	levelReadWrite::readLevel("test3.lvl", backgroundObjs, foregroundObjs,
 		groundObjs);
 }
 

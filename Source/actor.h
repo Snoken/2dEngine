@@ -7,7 +7,7 @@
 #include <cmath>
 #include <map>
 
-#ifdef WIN32
+#ifdef _WIN32
 	#include <Windows.h>
 	#include <MMSystem.h>
 #endif

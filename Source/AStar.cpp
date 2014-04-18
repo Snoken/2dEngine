@@ -140,8 +140,6 @@ bool AStar::DoSearch(Tree::Node* currNode)
 			cout << "Open List Size: " << m_openList.size() << endl;
 			displayOpenList();
 		}
-		// mark current vertex visited
-		currNode->vert->visited = true;
 	}
 	// default case, no path found
 	m_path.verts.clear();

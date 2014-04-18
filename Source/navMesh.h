@@ -10,11 +10,12 @@
 class navMesh
 {
 public:
-	navMesh(const list<ground> &allGround, const float &maxRunSpeed, const float &maxJumpSpeed)
+	navMesh(const list<ground> &allGround, const float &maxRunSpeed, const float &maxJumpSpeed,
+		const primitives::vertex& playerSize)
 	{
 		// Seed RNG for node coloring
 		srand((unsigned)time(NULL));
-		generateAllNodes(allGround, maxRunSpeed, maxJumpSpeed);
+		generateAllNodes(allGround, maxRunSpeed, maxJumpSpeed, playerSize);
 		buildGraph(allGround);
 	}
 	//fetch all navNodes associated with the specified platform
@@ -29,7 +30,8 @@ public:
 	Graph* getNavGraph(){ return m_navGraph; }
 
 private:
-	void generateAllNodes(const list<ground> &allGround, const float &maxRunSpeed, const float &maxJumpSpeed);
+	void generateAllNodes(const list<ground> &allGround, const float &maxRunSpeed, const float &maxJumpSpeed,
+		const primitives::vertex& playerSize);
 	double calculateCost(navNode::navInfo info);
 	void buildGraph(const list<ground> &allGround);
 	void colorNodes();

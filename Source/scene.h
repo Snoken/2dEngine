@@ -43,7 +43,9 @@ public:
 		initSounds();
 
 		m_zoom = 1.0;
-		m_mesh = new navMesh(groundObjs, player->getRunSpeed(), (float)player->getJumpSpeed());
+		primitives::vertex playerSize(player->width, player->height);
+		m_mesh = new navMesh(groundObjs, player->getRunSpeed(), (float)player->getJumpSpeed(),
+			playerSize);
 
 		//Uncomment to enable music, currently disabled for testing
 		#ifdef WIN32

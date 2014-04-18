@@ -13,10 +13,13 @@ public:
 		m_dest = NULL;
 		m_pSearch = NULL;
 		m_simpleMove = false;
+		m_waitingToJump = false;
 	}
 	bool findPath(Graph* navSpace);
 	void colorPath(Tree::Path path);
 	void setDest(primitives::vertex destLoc, ground * below, ground* dest, Graph* navSpace) {
+		if (!dest)
+			return;
 		m_start = below;
 		m_dest = dest;
 		navSpace->updateCosts(origin);
@@ -29,7 +32,6 @@ public:
 		else
 		{
 			m_dest = NULL;
-			m_destLoc = primitives::vertex();
 		}
 	}
 	void updateLocation(const long double & elapsed, ground *belowPlayer,
@@ -43,7 +45,7 @@ private:
 	ground* m_below;
 	AStar* m_pSearch;
 	bool m_simpleMove;
-
+	bool m_waitingToJump;
 	bool scalable(baseObject obj);
 
 	//Will move as close as possible
@@ -51,7 +53,8 @@ private:
 	bool pickDirection();
 	void moveLeft();
 	void moveRight();
-	bool needsToJump(ground *nearest, float distance, const long double &elapsed);
+	bool needsToJump(const primitives::vertex& startLoc, const primitives::vertex& jumpLoc,
+		const long double & elapsed);
 
 };
 

@@ -1,1 +1,0 @@
-mkdir linux_x86_dbg

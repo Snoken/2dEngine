@@ -1,9 +1,6 @@
 #include "bot.h"
 bool bot::findPath(Graph* navSpace)
 {
-	if (m_pSearch)
-		delete m_pSearch;
-
 	Graph::Vertex* start = NULL;
 	Graph::Vertex* end = NULL;
 	for (list<Graph::Vertex>::iterator itr = navSpace->getVertices()->begin(); 
@@ -20,7 +17,13 @@ bool bot::findPath(Graph* navSpace)
 		m_simpleMove = true;
 		return false;
 	}
-	m_pSearch = new AStar(navSpace, start, end);
+	if (m_pSearch)
+	{
+		m_pSearch->resetTree(start);
+		m_pSearch->setEnd(end);
+	}
+	else
+		m_pSearch = new AStar(navSpace, start, end);
 	m_pSearch->setVerbose(true);
 	return m_pSearch->DoSearch();
 }
@@ -40,19 +43,23 @@ void bot::updateLocation(const long double & elapsed, ground *belowPlayer,
 			//	next node in the path
 
 			//if close to navnode set vertical speed where it needs to be
-			if (!m_bOnGround)
-			{
-			}
-			else if (abs(origin.x - currEdge->startNode->origin.x) < .005)
+			navNode nextNode = *currEdge->startNode;
+			bool needsTo = needsToJump(origin, nextNode.origin, elapsed);
+			if (needsTo && m_bOnGround || m_waitingToJump)
 			{
 				m_movement = currEdge->moveVector;
-				jump(currEdge->moveVector.getVertComp() / m_jumpSpeed + .075);
+				origin = nextNode.origin;
+				origin.y += height / 2;
+				jump(currEdge->moveVector.getVertComp() / m_jumpSpeed);
+				m_waitingToJump = false;
 				m_pSearch->getPath()->edges.pop_front();
 				// TODO: make the bot go approach node properly instead of magically getting right speed
 			}
-			else if (origin.x < currEdge->startNode->origin.x)
+			else if (needsTo)
+				m_waitingToJump = true;
+			else if (origin.x < nextNode.origin.x)
 				updateMult(elapsed, "right");
-			else if (origin.x > currEdge->startNode->origin.x)
+			else if (origin.x > nextNode.origin.x)
 				updateMult(elapsed, "left");
 		}
 		else
@@ -87,7 +94,15 @@ bool bot::scalable(baseObject obj)
 	return physics::apex(jumpVec, maxHeight) >= obj.yMax;
 }
 
-bool bot::needsToJump(ground *nearest, float distance, const long double &elapsed)
+bool bot::needsToJump(const primitives::vertex& startLoc, const primitives::vertex& jumpLoc,
+	const long double & elapsed)
 {
+	primitives::vertex nextLoc(startLoc);
+	nextLoc.x += m_movement.getHorizComp() * elapsed;
+	nextLoc.y += m_movement.getVertComp() * elapsed;
+	if (startLoc.x < jumpLoc.x && nextLoc.x > jumpLoc.x)
+		return true;
+	else if (startLoc.x > jumpLoc.x && nextLoc.x < jumpLoc.x)
+		return true;
 	return false;
 }

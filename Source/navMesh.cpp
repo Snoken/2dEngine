@@ -1,7 +1,8 @@
 #include "navMesh.h"
 #include <algorithm>
 
-void navMesh::generateAllNodes(const list<ground> &allGround, const float &maxRunSpeed, const float &maxJumpSpeed)
+void navMesh::generateAllNodes(const list<ground> &allGround, const float &maxRunSpeed, const float &maxJumpSpeed,
+	const primitives::vertex& playerSize)
 {
 	cout << endl <<  "Generating Navigation Mesh... ";
 	//iterate through all ground objects and make a navNode at left, center, and right
@@ -10,20 +11,23 @@ void navMesh::generateAllNodes(const list<ground> &allGround, const float &maxRu
 		cout << endl << "Calculating paths for platform at (" << itr->origin.x << ", "
 			<< itr->origin.y << ")" << endl;
 		//create a navNode for the left edge
-		navNode node(primitives::vertex(itr->xMin, itr->yMax), (ground*)&(*itr), allGround, maxRunSpeed, maxJumpSpeed);
+		navNode node(primitives::vertex(itr->xMin, itr->yMax), (ground*)&(*itr), allGround, 
+			maxRunSpeed, maxJumpSpeed, playerSize);
 		//if there are any paths, add it to the list
 		list<navNode> nodes;
 		if (!node.getDests().empty())
 		nodes.push_back(node);
 
 		//create a navNode for the right edge
-		node = navNode(primitives::vertex(itr->xMax, itr->yMax), (ground*) &(*itr), allGround, maxRunSpeed, maxJumpSpeed);
+		node = navNode(primitives::vertex(itr->xMax, itr->yMax), (ground*) &(*itr), allGround, 
+			maxRunSpeed, maxJumpSpeed, playerSize);
 		//if there are any paths, add it to the list
 		if (!node.getDests().empty())
 			nodes.push_back(node);
 
 		//create a navNode for the center
-		node = navNode(primitives::vertex(itr->origin.x, itr->yMax), (ground*) &(*itr), allGround, maxRunSpeed, maxJumpSpeed);
+		node = navNode(primitives::vertex(itr->origin.x, itr->yMax), (ground*) &(*itr), allGround, 
+			maxRunSpeed, maxJumpSpeed, playerSize);
 		//if there are any paths, add it to the list
 		if (!node.getDests().empty())
 			nodes.push_back(node);
@@ -58,7 +62,7 @@ void navMesh::generateAllNodes(const list<ground> &allGround, const float &maxRu
 				float endY = infoItr->dest->yMax;
 				//create a navNode at end of path
 				navNode newNode(primitives::vertex(endX, endY), infoItr->dest, allGround,
-					maxRunSpeed, maxJumpSpeed);
+					maxRunSpeed, maxJumpSpeed, playerSize);
 				//add the node to the relevant map entry if any paths exist, create entry if needed
 				if (!newNode.getDests().empty())
 				{

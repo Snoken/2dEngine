@@ -3,7 +3,7 @@
 
 #define GLM_FORCE_RADIANS
 
-#if defined(WIN32)
+#ifdef _WIN32
 	#include <Windows.h>
 	#include <direct.h>
 	#include "fmod/fmod.hpp"
