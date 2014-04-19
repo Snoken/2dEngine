@@ -75,7 +75,7 @@ public:
 		victim->takeDamage((float)proj.getDamage());
 	}
 
-	void updateActorLocations(const long double & elapsed, map<int, bool>* keyMap);
+	void updateActorLocations(const long double & elapsed, const long double & prevElapsed, map<int, bool>* keyMap);
 	ground* getCurrentGround(baseObject* act);
 	ground* getCurrentGround(primitives::vertex loc);
 	ground* getCurrentCeiling(baseObject* act);

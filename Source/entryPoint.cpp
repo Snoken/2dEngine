@@ -133,7 +133,7 @@ void idleFunction(void)
 	//if the menu is not up, update all actors and projectiles
 	if (!bDrawMenu)
 	{
-		mainScene->updateActorLocations(elapsed - prevElapsed, input.getKeyMap());
+		mainScene->updateActorLocations(elapsed, prevElapsed, input.getKeyMap());
 		mainScene->updateProjectiles(elapsed - prevElapsed);
 	}	
 

@@ -62,7 +62,7 @@ void inputHandler::processKeys(scene &mainScene, const bool& bEditing,
 	if (keyMap.find('s')->second == true)
 	{
 		if (player->m_bOnGround && !player->m_bIsRolling && player->isMoving())
-			player->startRoll(timeDiff);
+			player->startRoll(elapsed);
 	}
 	else if (keyMap.find('a')->second == true)
 	{
@@ -78,13 +78,8 @@ void inputHandler::processKeys(scene &mainScene, const bool& bEditing,
 	}
 	if (keyMap.find('w')->second == true || keyMap.find(SPACEBAR)->second == true)
 	{
-		if (player->m_bOnGround)
-			#ifdef WIN32
-				fSystem->playSound(soundJump, 0, false, 0);
-			#else
-				fSystem->playSound(FMOD_CHANNEL_FREE, soundJump, false, 0);
-			#endif
-			player->jump();
+		if (player->m_bOnGround || player->m_bOnWall)
+			player->m_bJump = true;
 	}
 }
 

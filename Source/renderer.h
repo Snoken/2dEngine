@@ -25,11 +25,6 @@
 #include "projectile.h"
 #include "navMesh.h"
 
-#define WIN = WIN32 || WIN64
-#ifdef WIN
-	#define snprintf _snprintf
-#endif
-
 class renderer {
 public:
 	//renderer needs to know where all object lists are stored

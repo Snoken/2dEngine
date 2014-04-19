@@ -13,7 +13,6 @@ public:
 		m_dest = NULL;
 		m_pSearch = NULL;
 		m_simpleMove = false;
-		m_waitingToJump = false;
 	}
 	bool findPath(Graph* navSpace);
 	void colorPath(Tree::Path path);
@@ -34,7 +33,7 @@ public:
 			m_dest = NULL;
 		}
 	}
-	void updateLocation(const long double & elapsed, ground *belowPlayer,
+	void updateLocation(const long double & elapsed, const long double & prevElapsed, ground *belowPlayer,
 		ground *abovePlayer, map<float, ground*> *nearby, map<int, bool> *keyMap);
 
 private:
@@ -45,7 +44,6 @@ private:
 	ground* m_below;
 	AStar* m_pSearch;
 	bool m_simpleMove;
-	bool m_waitingToJump;
 	bool scalable(baseObject obj);
 
 	//Will move as close as possible

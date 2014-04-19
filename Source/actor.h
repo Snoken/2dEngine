@@ -18,9 +18,10 @@ class actor : public baseObject
 public:
 	enum ActorState { IDLE, RUNNING, ROLLING, CROUCHING, SLIDING };
 	ActorState m_state;
-	bool m_bOnGround, m_bFacingRight, m_bIsRolling, m_bOnWall;
+	bool m_bOnGround, m_bFacingRight, m_bIsRolling, m_bOnWall, m_bJump;
 	double m_frame;
 
+	//TODO: Read these values in from a config file of some sort
 	void init()
 	{
 		m_state = IDLE;
@@ -32,6 +33,7 @@ public:
 		m_bOnGround = false;
 		m_bOnWall = false;
 		m_bIsRolling = false;
+		m_bJump = false;
 		m_health = 100.0f;
 		m_damageDistance = 1.0f;
 		m_fallStart = 0.0f;
@@ -78,7 +80,7 @@ public:
 			m_health -= 10.0f;
 	}
 
-	void updateLocation( const long double & elapsed, ground *belowPlayer, 
+	void updateLocation(const long double & elapsed, const long double & prevElapsed, ground *belowPlayer,
 		ground *abovePlayer, map<float, ground*> *nearby, map<int, bool> *keyMap);
 	float getHealth(){ return m_health; }
 	void takeDamage(float pain){ m_health -= pain; }

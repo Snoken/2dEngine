@@ -28,7 +28,7 @@ bool bot::findPath(Graph* navSpace)
 	return m_pSearch->DoSearch();
 }
 
-void bot::updateLocation(const long double & elapsed, ground *belowPlayer,
+void bot::updateLocation(const long double & elapsed, const long double & prevElapsed, ground *belowPlayer,
 	ground *abovePlayer, map<float, ground*> *nearby, map<int, bool> *keyMap)
 {
 	if (m_dest)
@@ -45,18 +45,15 @@ void bot::updateLocation(const long double & elapsed, ground *belowPlayer,
 			//if close to navnode set vertical speed where it needs to be
 			navNode nextNode = *currEdge->startNode;
 			bool needsTo = needsToJump(origin, nextNode.origin, elapsed);
-			if (needsTo && m_bOnGround/* || m_waitingToJump && m_bOnGround*/)
+			if (needsTo && m_bOnGround)
 			{
 				m_movement = currEdge->moveVector;
 				origin = nextNode.origin;
 				origin.y += height / 2;
 				jump(currEdge->moveVector.getVertComp() / m_jumpSpeed + .1);
-				m_waitingToJump = false;
 				m_pSearch->getPath()->edges.pop_front();
 				// TODO: make the bot go approach node properly instead of magically getting right speed
 			}
-			else if (needsTo)
-				m_waitingToJump = true;
 			else if (origin.x < nextNode.origin.x)
 				updateMult(elapsed, "right");
 			else if (origin.x > nextNode.origin.x)
@@ -76,7 +73,7 @@ void bot::updateLocation(const long double & elapsed, ground *belowPlayer,
 	}
 	else if (m_bOnGround)
 		decayMult(elapsed);
-	actor::updateLocation(elapsed, belowPlayer, abovePlayer, nearby, keyMap);
+	actor::updateLocation(elapsed, prevElapsed, belowPlayer, abovePlayer, nearby, keyMap);
 }
 
 void bot::colorPath(Tree::Path path)

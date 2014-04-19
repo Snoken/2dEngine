@@ -155,7 +155,7 @@ bool scene::needsDeleting(const primitives::vertex &loc)
 }
 
 //handle motion of player
-void scene::updateActorLocations(const long double & elapsed, map<int, bool>* keyMap)
+void scene::updateActorLocations(const long double & elapsed, const long double & prevElapsed, map<int, bool>* keyMap)
 {
 	//figure out which ground object the player is currently above
 	ground *belowPlayer = getCurrentGround(player);
@@ -182,14 +182,14 @@ void scene::updateActorLocations(const long double & elapsed, map<int, bool>* ke
 			runChan = NULL;
 		}
 	}
-	player->updateLocation(elapsed, belowPlayer, abovePlayer, &nearby, keyMap);
+	player->updateLocation(elapsed, prevElapsed, belowPlayer, abovePlayer, &nearby, keyMap);
 
 	ground *belowbot1 = getCurrentGround(bot1);
 	ground *abovebot1 = getCurrentCeiling(bot1);
 	maxDistance = 0.5f;
 	map<float, ground*> nearbyBot;
 	bot1->getNearbyWalls(maxDistance, nearbyBot, &groundObjs);
-	bot1->updateLocation(elapsed, belowbot1, abovebot1, &nearbyBot, keyMap);
+	bot1->updateLocation(elapsed, prevElapsed, belowbot1, abovebot1, &nearbyBot, keyMap);
 }
 
 ground* scene::getCurrentGround(baseObject* act)

@@ -1,0 +1,58 @@
+<groundObjs>
+	<class ground>
+		<origin>(0,-1)</origin>
+		<width>200</width>
+		<height>0.2</height>
+		<platform>no</platform>
+		<color>(1,1,1,1)</color>
+		<textureType>stone</textureType>
+	</class ground>
+	<class ground>
+		<origin>(-0.475,-0.6)</origin>
+		<width>0.05</width>
+		<height>0.6</height>
+		<platform>no</platform>
+		<color>(1,1,1,1)</color>
+		<textureType>stone</textureType>
+	</class ground>
+	<class ground>
+		<origin>(0.175,-0.325)</origin>
+		<width>0.45</width>
+		<height>0.05</height>
+		<platform>no</platform>
+		<color>(1,1,1,1)</color>
+		<textureType>stone</textureType>
+	</class ground>
+	<class ground>
+		<origin>(0.375,-0.05)</origin>
+		<width>0.05</width>
+		<height>0.5</height>
+		<platform>no</platform>
+		<color>(1,1,1,1)</color>
+		<textureType>stone</textureType>
+	</class ground>
+	<class ground>
+		<origin>(-0.025,0.275)</origin>
+		<width>0.05</width>
+		<height>0.55</height>
+		<platform>no</platform>
+		<color>(1,1,1,1)</color>
+		<textureType>stone</textureType>
+	</class ground>
+	<class ground>
+		<origin>(-0.725,-0.325)</origin>
+		<width>0.45</width>
+		<height>0.05</height>
+		<platform>no</platform>
+		<color>(1,1,1,1)</color>
+		<textureType>stone</textureType>
+	</class ground>
+	<class ground>
+		<origin>(-1.375,-0.575)</origin>
+		<width>0.35</width>
+		<height>0.05</height>
+		<platform>no</platform>
+		<color>(1,1,1,1)</color>
+		<textureType>stone</textureType>
+	</class ground>
+</groundObjs>

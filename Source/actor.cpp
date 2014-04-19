@@ -67,31 +67,42 @@ void actor::moveByDistanceY( float distance )
 	setMaxMin();
 }
 
-void actor::updateLocation( const long double & elapsed, ground *belowPlayer, 
+void actor::updateLocation(const long double & elapsed, const long double & prevElapsed, ground *belowPlayer,
 	ground *abovePlayer, map<float, ground*> *nearby, map<int, bool> *keyMap)
 {
+	double timeDiff = elapsed - prevElapsed;
+	if (m_bJump && !m_bOnWall)
+	{
+		jump();
+		m_bJump = false;
+	}
 	actor *temp;
-	double horiz = m_movement.getHorizComp();
 	if( m_pSlidingOn == NULL )
 		m_bOnWall = false;
+	// if actor is sliding on something
 	else
 	{
+		//if now below what is being slid on, drop off
 		if( m_pSlidingOn->yMin >= yMin )
 			m_pSlidingOn = NULL;
-		else if( m_bOnWall && (keyMap->find('w'))->second == true )
+		//if player has pressed jump, jump off wall
+		else if( m_bOnWall && m_bJump )
 		{
 			m_bFacingRight ? m_movement.setHorizontalComp(1.0f): 
 				m_movement.setHorizontalComp(-1.0f);
 			m_bOnWall = false;
-			m_movement.setVerticalComp(3.0f);
+			m_movement.setVerticalComp(m_jumpSpeed);
+			m_bJump = false;
 			m_pSlidingOn = NULL;
 		}
+		//drop off wall if facing correct direction for key pressed
 		else if( m_bOnWall && (keyMap->find('d'))->second == true && m_bFacingRight )
 		{
 			m_bOnWall = false;
 			m_pSlidingOn = NULL;
 			m_movement.setHorizontalComp(.1f);
 		}
+		//drop off wall if facing correct direction for key pressed
 		else if( m_bOnWall && (keyMap->find('a'))->second == true && !m_bFacingRight )
 		{
 			m_bOnWall = false;
@@ -131,9 +142,9 @@ void actor::updateLocation( const long double & elapsed, ground *belowPlayer,
 
 		//apply gravity to copy to make sure they don't fall through world
 		if( m_bOnWall )
-			temp->moveByDistanceY( temp->m_slideSpeed * (float)elapsed );
+			temp->moveByDistanceY(temp->m_slideSpeed * (float) timeDiff);
 		else
-			temp->applyGravity( elapsed );
+			temp->applyGravity(timeDiff);
 
 		if( abovePlayer != NULL && !abovePlayer->bIsPlatform && 
 			vert > 0.0f && collision::areColliding( *temp, *abovePlayer ) )
@@ -164,29 +175,33 @@ void actor::updateLocation( const long double & elapsed, ground *belowPlayer,
 	else
 		m_state = groundFrameUpdate(elapsed, abovePlayer);
 	
+	double horiz = m_movement.getHorizComp();
 	//the magic number of .25 is to prevent large moves after break points and the like
-	if( horiz != 0.0f && !m_bOnWall && elapsed < .25 )
+	if (horiz != 0.0f && !m_bOnWall && timeDiff < .25)
 	{
 		//check if there is a wall within 0.5f
 		if( nearby->empty() )
-			moveByTimeX( elapsed );
+			moveByTimeX(timeDiff);
 		//try moving
 		else
 		{
 			bool moved = false;
-			const long double moveDistance = horiz*elapsed;
+			const long double moveDistance = horiz*timeDiff;
 			for (map<float, ground*>::iterator itr = nearby->begin(); itr != nearby->end(); ++itr)
 			{
 				//if the distance to the object is greater than the amount moved, don't need to worry
 				//	about collision
 				if (itr->first > abs(moveDistance))
 					continue;
-				//if object in question is to the right of player move in positive dir
+				//if object in question is to the right of player and moving in positive dir
 				if (collision::leftOf(*this, *itr->second) && horiz > 0)
 				{
 					moveByDistanceX(itr->first - .001f);
 					m_movement.setHorizontalComp(0);
 					moved = true;
+					//can't slide down soemthing while standing on ground
+					if (!m_bOnGround)
+						m_pSlidingOn = itr->second;
 					break;
 				}
 				//otherwise move by negative amt
@@ -195,17 +210,23 @@ void actor::updateLocation( const long double & elapsed, ground *belowPlayer,
 					moveByDistanceX(-(itr->first - .001f));
 					m_movement.setHorizontalComp(0);
 					moved = true;
+					//can't slide down soemthing while standing on ground
+					if (!m_bOnGround)
+						m_pSlidingOn = itr->second;
 					break;
 				}
 			}
 			if (!moved)
-				moveByTimeX(elapsed);
+				moveByTimeX(timeDiff);
 		}
 	}
 }
 
 void actor::decayMult(const long double & elapsed)
 {
+	//don't decay if in air
+	if (!m_bOnGround)
+		return;
 	double horiz = m_movement.getHorizComp();
 	double timeToStop = 0.25;
 	if( horiz != 0 )
@@ -239,14 +260,20 @@ void actor::updateMult(const long double & elapsed, string dir)
 		if (dir == "left")
 		{
 			mult = -1.0;
-			m_bFacingRight = false;
+			if (!m_bOnWall)
+				m_bFacingRight = false;
 		}
 		else
 		{
 			mult = 1.0;
-			m_bFacingRight = true;
+			if (!m_bOnWall)
+				m_bFacingRight = true;
 		}
-		horiz += elapsed / timeToTopSpeed * m_runSpeed * mult;
+		// two different change rates for air and ground
+		if (m_bOnGround)
+			horiz += elapsed / timeToTopSpeed * m_runSpeed * mult;
+		else
+			horiz += elapsed / timeToTopSpeed * m_runSpeed * mult / 2;
 		if (abs(horiz) > m_runSpeed)
 			horiz = m_runSpeed * mult;
 		m_movement.setHorizontalComp(horiz);
@@ -337,7 +364,7 @@ void actor::endRoll( const long double & elapsed )
 }
 void actor::startRoll( const long double & elapsed )
 {
-	if(!m_bIsRolling && elapsed - m_lastRollTime > 0.5 )
+	if(!m_bIsRolling && (elapsed - m_lastRollTime > 0.5 || m_lastRollTime == 0.0))
 	{
 		m_bIsRolling = true;
 		m_frame = 0;
