@@ -43,6 +43,7 @@ public:
 		m_climbAngle = 45.0f;
 		m_lastRollTime = 0;
 		m_timeToTopSpeed = 0.25;
+		m_lastFrameTime = 0.0;
 	}
 	actor(primitives::vertex origin, list<primitives::vertex> points):baseObject(origin, points)
 	{
@@ -96,7 +97,7 @@ public:
 	double getJumpSpeed(){ return m_jumpSpeed; }
 
 protected:
-	double m_lastRollTime, m_jumpSpeed;
+	double m_lastRollTime, m_jumpSpeed, m_lastFrameTime;
 	ground *m_pSlidingOn;
 	bool m_bGravity;
 	physics::vector m_movement;

@@ -299,11 +299,22 @@ void actor::airFrameUpdate()
 
 actor::ActorState actor::groundFrameUpdate( const long double & elapsed, ground *abovePlayer )
 {
+	// set frame rate for animation
+	int FPS = 10;
+	if(m_lastFrameTime == 0.0)
+		m_lastFrameTime = elapsed;
+
+	// signal frame needs changing if time for one frame elapsed
+	bool changeFrame = (elapsed-m_lastFrameTime) > (1000.0/FPS)/1000.0;
+	if(changeFrame)
+		m_lastFrameTime = elapsed;
+
 	double horiz = m_movement.getHorizComp();
-	if( abs(horiz) <= .0001 )
+	if( !isMoving() )
 	{
-		m_frame += .05;
-		if( m_frame >= 3.95 )
+		if(changeFrame)
+			m_frame += 1.0;
+		if( m_frame == 4.0 )
 			m_frame = 0;
 		if( m_bIsRolling )
 			return CROUCHING;
@@ -314,8 +325,9 @@ actor::ActorState actor::groundFrameUpdate( const long double & elapsed, ground 
 	{
 		if( m_bIsRolling )
 		{
-			m_frame += .15;
-			if( m_frame >= 2.95 )
+			if(changeFrame)
+				m_frame += 1.0;
+			if( m_frame == 3.0 )
 			{
 				m_frame = 0;
 				actor *endRollTest = new actor(*this);
@@ -323,7 +335,7 @@ actor::ActorState actor::groundFrameUpdate( const long double & elapsed, ground 
 				if( abovePlayer == NULL || !collision::areColliding(*endRollTest, *abovePlayer) )
 				{
 					endRoll(elapsed);
-					if( abs(horiz) <= .0001 )
+					if( !isMoving() )
 						return IDLE;
 					else
 						return RUNNING;
@@ -333,8 +345,9 @@ actor::ActorState actor::groundFrameUpdate( const long double & elapsed, ground 
 		}
 		else
 		{
-			m_frame += .175;
-			if( m_frame >= 7.825 )
+			if(changeFrame)
+				m_frame += 1.0;
+			if( m_frame == 8.0 )
 				m_frame = 0;
 			return RUNNING;
 		}
