@@ -11,6 +11,8 @@ bool bot::findPath(Graph* navSpace)
 		if (*itr->plat == *m_dest)
 			end = &*itr;
 	}
+	if(!start || !end)
+		return false;
 	if (*start->plat == *end->plat)
 	{ 
 		// add code for simple move within current platform

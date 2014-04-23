@@ -2,16 +2,14 @@
 
 void scene::tryDelete()
 {
-	for (list<ground>::iterator itr = groundObjs.begin(); itr != groundObjs.end(); ++itr)
+	for (list<ground>::iterator itr = ++groundObjs.begin(); itr != groundObjs.end(); ++itr)
 	{
-		if (itr->bSelected && itr != groundObjs.begin())
+		if (itr->bSelected)
 		{
 			m_mesh->removeEntry(&(*itr));
 			groundObjs.remove(*itr);
 			return;
 		}
-		else
-			cout << "Cannot delete first ground object." << endl;
 	}
 }
 

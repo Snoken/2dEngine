@@ -181,13 +181,10 @@ void inputHandler::mouseDown(scene &mainScene, const bool &bDrawMenu, const bool
 
 void inputHandler::mouseUp(scene &mainScene, const bool &bEditing)
 {
-	if (!bEditing)
+	if (bEditing)
 	{
 		primitives::vertex clickLoc = mainScene.getClickLoc();
-		clickLoc.roundToNearest(.05f);
-
 		primitives::vertex mouseLoc = mainScene.getMouseLoc();
-		mouseLoc.roundToNearest(.05f);
 
 		primitives::vertex drawSize;
 		drawSize.x = mouseLoc.x - clickLoc.x;

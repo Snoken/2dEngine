@@ -25,6 +25,18 @@ namespace primitives {
 		}
 		void roundToNearest(float interval)
 		{
+			std::cout << "Before, (" << x << ", " << y << ")" << std::endl;
+			/*float proximity = fmod(x, interval);
+			if(abs(proximity) > interval/2.0f)
+				x += interval - proximity;
+			else
+				x -= proximity;
+
+			proximity = fmod(y, interval);
+			if(abs(proximity) > interval/2.0f)
+				y += interval - proximity;
+			else
+				y -= proximity;*/
 			x = floor(x * 100.0f) / 100.0f;
 			float proximity = fmod(x, interval);
 			if (abs(proximity) < .025f)
@@ -38,6 +50,7 @@ namespace primitives {
 				y -= proximity;
 			else
 				y >= 0 ? y += interval - proximity : y += -interval - proximity;
+			std::cout << "After, (" << x << ", " << y << ")" << std::endl;
 		}
 	};
 }
