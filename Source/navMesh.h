@@ -19,12 +19,12 @@ public:
 		buildGraph(allGround);
 	}
 	//fetch all navNodes associated with the specified platform
-	list<navNode> getNodesForPlatform(ground *lookUp) 
+	list<navNode>* getNodesForPlatform(ground *lookUp) 
 	{
 		map<ground*, list<navNode>>::iterator loc = m_mesh.find(lookUp);
 		if (loc == m_mesh.end())
-			return list<navNode>();
-		return loc->second;
+			return NULL;
+		return &loc->second;
 	}
 	void removeEntry(ground *remove){ m_mesh.erase(remove); }
 	Graph* getNavGraph(){ return m_navGraph; }

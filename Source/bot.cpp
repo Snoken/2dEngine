@@ -31,7 +31,19 @@ bool bot::findPath(Graph* navSpace)
 void bot::updateLocation(const long double & elapsed, const long double & prevElapsed, ground *belowPlayer,
 	ground *abovePlayer, map<float, ground*> *nearby, map<int, bool> *keyMap)
 {
-	if (m_dest)
+	const long double timeDiff = elapsed - prevElapsed;
+
+	double horizSpeed = abs(m_movement.getHorizComp());
+	double stopTime = (horizSpeed / m_runSpeed) * m_timeToStop;
+	float stopDistance = horizSpeed * stopTime + 0.5f * (horizSpeed / stopTime) * pow(stopTime, 2.0f);
+	if (isMoving() && m_simpleMove && stopDistance >= abs(origin.x - m_destLoc.x))
+	{
+		decayMult(timeDiff);
+		//this will be hit once the bot has arrived
+		if (!isMoving())
+			m_simpleMove = false;
+	}
+	else if (m_dest)
 	{
 		Graph::Edge* currEdge = NULL;
 		// if we haven't gone anywhere on the path yet, set iterator to first edge in path
@@ -42,37 +54,42 @@ void bot::updateLocation(const long double & elapsed, const long double & prevEl
 			// it can be assumed at this point that the bot is on the same platform as the 
 			//	next node in the path
 
-			//if close to navnode set vertical speed where it needs to be
 			navNode nextNode = *currEdge->startNode;
-			bool needsTo = needsToJump(origin, nextNode.origin, elapsed);
+			bool needsTo = needsToJump(origin, nextNode.origin, timeDiff);
+			//if close to navnode set vertical speed where it needs to be
 			if (needsTo && m_bOnGround)
 			{
 				m_movement = currEdge->moveVector;
 				origin = nextNode.origin;
 				origin.y += height / 2;
-				jump(currEdge->moveVector.getVertComp() / m_jumpSpeed + .1);
+				if (currEdge->moveVector.getVertComp() != 0.0)
+					jump(currEdge->moveVector.getVertComp() / m_jumpSpeed + .1);
 				m_pSearch->getPath()->edges.pop_front();
 				// TODO: make the bot go approach node properly instead of magically getting right speed
 			}
 			else if (origin.x < nextNode.origin.x)
-				updateMult(elapsed, "right");
+				updateMult(timeDiff, "right");
 			else if (origin.x > nextNode.origin.x)
-				updateMult(elapsed, "left");
+				updateMult(timeDiff, "left");
 		}
 		else
+		{
 			m_dest = NULL;
+			// toggle simple move on so bot will walk to correct location on platform
+			m_simpleMove = true;
+		}
 	}
 	else if (m_simpleMove)
 	{
 		if (abs(origin.x - m_destLoc.x) < .03)
 			m_simpleMove = false;
 		else if (origin.x < m_destLoc.x)
-			updateMult(elapsed, "right");
+			updateMult(timeDiff, "right");
 		else if (origin.x > m_destLoc.x)
-			updateMult(elapsed, "left");
+			updateMult(timeDiff, "left");
 	}
 	else if (m_bOnGround)
-		decayMult(elapsed);
+		decayMult(timeDiff);
 	actor::updateLocation(elapsed, prevElapsed, belowPlayer, abovePlayer, nearby, keyMap);
 }
 
@@ -94,6 +111,9 @@ bool bot::scalable(baseObject obj)
 bool bot::needsToJump(const primitives::vertex& startLoc, const primitives::vertex& jumpLoc,
 	const long double & elapsed)
 {
+	//only jump if actually on right platform
+	if (abs(yMin - jumpLoc.y) > 0.005f)
+		return false;
 	primitives::vertex nextLoc(startLoc);
 	nextLoc.x += m_movement.getHorizComp() * elapsed;
 	nextLoc.y += m_movement.getVertComp() * elapsed;

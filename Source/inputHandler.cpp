@@ -11,6 +11,9 @@ void inputHandler::initKeyMap()
 	keyMap.insert(make_pair('s', false));
 	keyMap.insert(make_pair('d', false));
 
+	//set bot to follow
+	keyMap.insert(make_pair('f', false));
+
 	//drop down through platform
 	keyMap.insert(make_pair('q', false));
 
@@ -51,7 +54,7 @@ void inputHandler::handleKeyDown(unsigned char key, bool& bEditing, bool& bDrawM
 }
 
 void inputHandler::processKeys(scene &mainScene, const bool& bEditing, 
-	const long double& elapsed, const double &timeDiff, FMOD::System* fSystem, FMOD::Sound* soundJump)
+	const long double& elapsed, const double &timeDiff)
 {
 	if (bEditing && keyMap.find(DEL)->second == true)
 		mainScene.tryDelete();
@@ -59,6 +62,7 @@ void inputHandler::processKeys(scene &mainScene, const bool& bEditing,
 	if (keyMap.find('a')->second == false && keyMap.find('d')->second == false && !player->m_bIsRolling)
 		//decay the multiplier if no keys are being pressed
 		player->decayMult(timeDiff);
+	
 	if (keyMap.find('s')->second == true)
 	{
 		if (player->m_bOnGround && !player->m_bIsRolling && player->isMoving())
@@ -81,17 +85,26 @@ void inputHandler::processKeys(scene &mainScene, const bool& bEditing,
 		if (player->m_bOnGround || player->m_bOnWall)
 			player->m_bJump = true;
 	}
+	if (keyMap.find('f')->second == true)
+	{
+		mainScene.bot1->toggleFollow(elapsed);
+		keyMap.find('f')->second = false;
+	}
 }
 
 void inputHandler::mouseDown(scene &mainScene, const bool &bDrawMenu, const bool &bEditing, float aspect)
 {
 	primitives::vertex clickLoc = mainScene.getMouseLoc();
+	primitives::vertex overlayLoc = clickLoc;
+	overlayLoc.x -= mainScene.getPlayer()->origin.x;
+	overlayLoc.x *= mainScene.getZoom();
+	overlayLoc.y *= mainScene.getZoom();
 
 	if (bDrawMenu)
 	{
 		primitives::vertex loc = clickLoc;
 		clickLoc.x -= mainScene.getPlayer()->origin.x;
-		baseObject *selected = selection::checkSelectedMenu(clickLoc, *mainScene.getMenu());
+		baseObject *selected = selection::checkSelectedMenu(overlayLoc, *mainScene.getMenu());
 		if (selected != NULL && selected->texture == mainScene.getSaveTexId())
 		{
 			#ifdef WIN32
@@ -121,12 +134,13 @@ void inputHandler::mouseDown(scene &mainScene, const bool &bDrawMenu, const bool
 				*mainScene.getFg(), *mainScene.getGround());
 			if (result != "success")
 				cout << result << endl;
+
 		}
 	}
 	else if (bEditing)
 	{
 		ground* selected = selection::checkSelected(clickLoc, *mainScene.getGround(), bEditing);
-		baseObject *overlaySelected = selection::checkSelectedOverlay(clickLoc,
+		baseObject *overlaySelected = selection::checkSelectedOverlay(overlayLoc,
 			*mainScene.getOverlay());
 		if (overlaySelected != NULL)
 		{
@@ -161,36 +175,39 @@ void inputHandler::mouseDown(scene &mainScene, const bool &bDrawMenu, const bool
 			cout << *node << endl;
 		}
 		else
-			mainScene.addProjectile();
+			mainScene.addProjectile(mainScene.getPlayer());
 	}
 }
 
-void inputHandler::mouseUp(scene &mainScene)
+void inputHandler::mouseUp(scene &mainScene, const bool &bEditing)
 {
-	primitives::vertex clickLoc = mainScene.getClickLoc();
-	clickLoc.roundToNearest(.05f);
-
-	primitives::vertex mouseLoc = mainScene.getMouseLoc();
-	mouseLoc.roundToNearest(.05f);
-
-	primitives::vertex drawSize;
-	drawSize.x = mouseLoc.x - clickLoc.x;
-	drawSize.y = mouseLoc.y - clickLoc.y;
-	//drawSize.roundToNearest(.05f);
-	drawCenter.x = clickLoc.x + drawSize.x / 2;
-	drawCenter.y = clickLoc.y + drawSize.y / 2;
-	//drawCenter.roundToNearest(.025f);
-	//prevent accidental creating
-	if (abs(drawSize.x) > .025 && abs(drawSize.y) > .025)
+	if (!bEditing)
 	{
-		mainScene.getGround()->push_back(baseObject(drawCenter, drawSize.x, drawSize.y));
-		drawSize.x = drawSize.y = 0.0f;
-		mainScene.setDrawSize(drawSize);
-		mainScene.setClickLoc(primitives::vertex());
+		primitives::vertex clickLoc = mainScene.getClickLoc();
+		clickLoc.roundToNearest(.05f);
+
+		primitives::vertex mouseLoc = mainScene.getMouseLoc();
+		mouseLoc.roundToNearest(.05f);
+
+		primitives::vertex drawSize;
+		drawSize.x = mouseLoc.x - clickLoc.x;
+		drawSize.y = mouseLoc.y - clickLoc.y;
+		//drawSize.roundToNearest(.05f);
+		drawCenter.x = clickLoc.x + drawSize.x / 2;
+		drawCenter.y = clickLoc.y + drawSize.y / 2;
+		//drawCenter.roundToNearest(.025f);
+		//prevent accidental creating
+		if (abs(drawSize.x) > .025 && abs(drawSize.y) > .025)
+		{
+			mainScene.getGround()->push_back(baseObject(drawCenter, drawSize.x, drawSize.y));
+			drawSize.x = drawSize.y = 0.0f;
+			mainScene.setDrawSize(drawSize);
+			mainScene.setClickLoc(primitives::vertex());
+		}
 	}
 }
 
-#ifdef WIN32
+#ifdef _WIN32
 void inputHandler::getFileWin(OPENFILENAME & ofn)
 {
 	char szFile[260];       // buffer for file name

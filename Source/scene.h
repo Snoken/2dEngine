@@ -18,13 +18,6 @@
 #include "levelReadWrite.h"
 #include "navMesh.h"
 
-#define WIN = WIN32 || WIN64
-#ifdef WIN
-	#include "fmod/fmod.hpp"
-#else
-	#include "fmodex/fmod.hpp"
-#endif
-
 class scene
 {
 public:
@@ -40,40 +33,27 @@ public:
 		initObjects(levelFile);
 		initOverlay();
 		initMenu();
-		initSounds();
 
 		m_zoom = 1.0;
 		primitives::vertex playerSize(player->width, player->height);
 		m_mesh = new navMesh(groundObjs, player->getRunSpeed(), (float)player->getJumpSpeed(),
 			playerSize);
-
-		//Uncomment to enable music, currently disabled for testing
-		#ifdef WIN32
-				//fSystem->playSound(soundMusic, 0, false, 0);
-		#else
-				//fSystem->playSound(FMOD_CHANNEL_FREE, soundMusic, false, 0);
-		#endif
 	}
 	void redraw(bool& bEditing, bool& bDrawOutline, bool& bDrawMenu)
 	{
 		renderEng->redraw(bEditing, bDrawOutline, bDrawMenu, *player, *bot1, m_zoom, 
 			*selected, m_aspect, m_mouseLoc, m_clickLoc, m_drawSize, *m_mesh);
 	}
-	void initSounds();
 	void tryDelete();
 	void updateOutline(int x, int y);
 	void changeZoom(float diff);
 
-	void addProjectile()
+	void addProjectile(actor* owner)
 	{
-		projectiles.push_back(projectile(player->origin, m_clickLoc, 2.0f));
+		projectiles.push_back(projectile(player->origin, m_clickLoc, 2.0f, owner));
 	}
 	void updateProjectiles(long double elapsed);
 	bool needsDeleting(const primitives::vertex &loc);
-	void damageActor(actor* victim, projectile &proj)
-	{
-		victim->takeDamage((float)proj.getDamage());
-	}
 
 	void updateActorLocations(const long double & elapsed, const long double & prevElapsed, map<int, bool>* keyMap);
 	ground* getCurrentGround(baseObject* act);
@@ -99,12 +79,10 @@ public:
 	list<baseObject>* getOverlay() { return &overlay; }
 	navMesh* getMesh() { return m_mesh; }
 	float getZoom()	{ return m_zoom; }
-	FMOD::System* getFSys() { return fSystem; }
 
 	navNode* checkSelectedNode();
 
 	bot *bot1;
-	FMOD::Sound      *soundJump, *soundMusic, *soundRun; //sound that will be loaded and played
 
 private:
 	void initObjects(const string& levelFile);
@@ -129,10 +107,6 @@ private:
 
 	actor *player;
 	ground *selected;
-
-	//FMod Stuff
-	FMOD::System     *fSystem; //handle to FMOD engine
-	FMOD::Channel	 *runChan;
 
 	renderer *renderEng;
 };

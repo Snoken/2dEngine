@@ -76,148 +76,158 @@ void actor::updateLocation(const long double & elapsed, const long double & prev
 		jump();
 		m_bJump = false;
 	}
-	actor *temp;
-	if( m_pSlidingOn == NULL )
-		m_bOnWall = false;
-	// if actor is sliding on something
-	else
+	//multisample for collision if linear move distance longer than .05 (minimum platform dimension)
+	float xDiff = m_movement.getHorizComp() * timeDiff;
+	float yDiff = m_movement.getHorizComp() * timeDiff;
+	float linear = sqrtf(pow(xDiff, 2.0f) + pow(yDiff, 2.0f));
+	int samples = floor(linear / .05f) + 1;
+	double sampleTime = timeDiff / samples;
+
+	for (int i = 0; i < samples; ++i)
 	{
-		//if now below what is being slid on, drop off
-		if( m_pSlidingOn->yMin >= yMin )
-			m_pSlidingOn = NULL;
-		//if player has pressed jump, jump off wall
-		else if( m_bOnWall && m_bJump )
-		{
-			m_bFacingRight ? m_movement.setHorizontalComp(1.0f): 
-				m_movement.setHorizontalComp(-1.0f);
+		actor *temp;
+		if (m_pSlidingOn == NULL)
 			m_bOnWall = false;
-			m_movement.setVerticalComp(m_jumpSpeed);
-			m_bJump = false;
-			m_pSlidingOn = NULL;
-		}
-		//drop off wall if facing correct direction for key pressed
-		else if( m_bOnWall && (keyMap->find('d'))->second == true && m_bFacingRight )
-		{
-			m_bOnWall = false;
-			m_pSlidingOn = NULL;
-			m_movement.setHorizontalComp(.1f);
-		}
-		//drop off wall if facing correct direction for key pressed
-		else if( m_bOnWall && (keyMap->find('a'))->second == true && !m_bFacingRight )
-		{
-			m_bOnWall = false;
-			m_pSlidingOn = NULL;
-			m_movement.setHorizontalComp(-.1f);
-		}
+		// if actor is sliding on something
 		else
 		{
-			if( !m_bOnWall )
+			//if now below what is being slid on, drop off
+			if (m_pSlidingOn->yMin >= yMin)
+				m_pSlidingOn = NULL;
+			//if player has pressed jump, jump off wall
+			else if (m_bOnWall && m_bJump)
 			{
-				m_bOnWall = true;
+				m_bFacingRight ? m_movement.setHorizontalComp(1.0f) :
+					m_movement.setHorizontalComp(-1.0f);
+				m_bOnWall = false;
+				m_movement.setVerticalComp(m_jumpSpeed);
+				m_bJump = false;
+				m_pSlidingOn = NULL;
+			}
+			//drop off wall if facing correct direction for key pressed
+			else if (m_bOnWall && (keyMap->find('d'))->second == true && m_bFacingRight)
+			{
+				m_bOnWall = false;
+				m_pSlidingOn = NULL;
+				m_movement.setHorizontalComp(.1f);
+			}
+			//drop off wall if facing correct direction for key pressed
+			else if (m_bOnWall && (keyMap->find('a'))->second == true && !m_bFacingRight)
+			{
+				m_bOnWall = false;
+				m_pSlidingOn = NULL;
+				m_movement.setHorizontalComp(-.1f);
+			}
+			else
+			{
+				if (!m_bOnWall)
+				{
+					m_bOnWall = true;
+					m_movement.setVerticalComp(0);
+					collision::leftOf(*this, *m_pSlidingOn) ?
+						m_bFacingRight = false : m_bFacingRight = true;
+				}
+				m_fallStart = origin.y;
+			}
+		}
+
+		double vert = m_movement.getVertComp();
+		if (vert < 0.0f && m_fallStart == 999.99f)
+			m_fallStart = origin.y;
+
+		primitives::vertex below(origin.x, yMin - .02f);
+		if (belowPlayer != NULL && !(collision::inObject(below, *belowPlayer) && vert >= 0.0f))
+		{
+			if (m_bOnGround)
+				m_fallStart = origin.y;
+			m_bOnGround = false;
+		}
+
+		//if the actor is currently in the air, apply gravity
+		if (!m_bOnGround)
+		{
+			airFrameUpdate();
+			temp = new actor(*this);
+
+			//apply gravity to copy to make sure they don't fall through world
+			if (m_bOnWall)
+				temp->moveByDistanceY(temp->m_slideSpeed * (float) sampleTime);
+			else
+				temp->applyGravity(sampleTime);
+
+			if (abovePlayer != NULL && !abovePlayer->bIsPlatform &&
+				vert > 0.0f && collision::areColliding(*temp, *abovePlayer))
+			{
+				moveByDistanceY(abs(abovePlayer->yMin - yMax) - .005f);
+				m_movement.setVerticalComp(0.0);
+			}
+			//if next iter of motion still leaves player above ground, do it
+			else if (temp->timeToCollisionY(*belowPlayer) > 0)
+			{
+				*this = *temp;
+				m_timeToImpact = temp->timeToCollisionY(*belowPlayer);
+			}
+			//otherwise, move player just enough to be on ground
+			else
+			{
+				moveByDistanceY(m_timeToImpact*m_movement.getVertComp());
+				m_bOnGround = true;
+				m_bOnWall = false;
+				m_pSlidingOn = NULL;
 				m_movement.setVerticalComp(0);
-				collision::leftOf(*this, *m_pSlidingOn) ? 
-					m_bFacingRight = false : m_bFacingRight = true;
+				m_fallEnd = origin.y;
+				//TODO: change to be velocity based
+				takeFallDamage(m_fallStart - m_fallEnd);
+				m_fallStart = 999.99f;
 			}
-			m_fallStart = origin.y;
 		}
-	}
-
-	double vert = m_movement.getVertComp();
-	if( vert < 0.0f && m_fallStart == 999.99f )
-		m_fallStart = origin.y;
-
-	primitives::vertex below( origin.x, yMin - .02f );
-	if( belowPlayer != NULL && !(collision::inObject( below, *belowPlayer ) && vert >= 0.0f) )
-	{
-		if( m_bOnGround )
-			m_fallStart = origin.y;
-		m_bOnGround = false;
-	}
-
-	//if the actor is currently in the air, apply gravity
-	if( !m_bOnGround )
-	{
-		airFrameUpdate();
-		temp = new actor(*this);
-
-		//apply gravity to copy to make sure they don't fall through world
-		if( m_bOnWall )
-			temp->moveByDistanceY(temp->m_slideSpeed * (float) timeDiff);
 		else
-			temp->applyGravity(timeDiff);
+			m_state = groundFrameUpdate(elapsed, abovePlayer);
 
-		if( abovePlayer != NULL && !abovePlayer->bIsPlatform && 
-			vert > 0.0f && collision::areColliding( *temp, *abovePlayer ) )
+		double horiz = m_movement.getHorizComp();
+		//the magic number of .25 is to prevent large moves after break points and the like
+		if (horiz != 0.0f && !m_bOnWall && sampleTime < .25)
 		{
-			moveByDistanceY( abovePlayer->yMin - yMax - .005f );
-			m_movement.setVerticalComp(0.0);
-		}
-		//if next iter of motion still leaves player above ground, do it
-		else if(temp->timeToCollisionY( *belowPlayer ) > 0)
-		{
-			*this=*temp;
-			m_timeToImpact = temp->timeToCollisionY( *belowPlayer );
-		}
-		//otherwise, move player just enough to be on ground
-		else
-		{
-			moveByTimeY( m_timeToImpact );
-			m_bOnGround = true;
-			m_bOnWall = false;
-			m_pSlidingOn = NULL;
-			m_movement.setVerticalComp(0);
-			m_fallEnd = origin.y;
-			//TODO: change to be velocity based
-			takeFallDamage( m_fallStart-m_fallEnd );
-			m_fallStart = 999.99f;
-		}
-	}
-	else
-		m_state = groundFrameUpdate(elapsed, abovePlayer);
-	
-	double horiz = m_movement.getHorizComp();
-	//the magic number of .25 is to prevent large moves after break points and the like
-	if (horiz != 0.0f && !m_bOnWall && timeDiff < .25)
-	{
-		//check if there is a wall within 0.5f
-		if( nearby->empty() )
-			moveByTimeX(timeDiff);
-		//try moving
-		else
-		{
-			bool moved = false;
-			const long double moveDistance = horiz*timeDiff;
-			for (map<float, ground*>::iterator itr = nearby->begin(); itr != nearby->end(); ++itr)
+			//check if there is a wall within 0.5f
+			if (nearby->empty())
+				moveByTimeX(sampleTime);
+			//try moving
+			else
 			{
-				//if the distance to the object is greater than the amount moved, don't need to worry
-				//	about collision
-				if (itr->first > abs(moveDistance))
-					continue;
-				//if object in question is to the right of player and moving in positive dir
-				if (collision::leftOf(*this, *itr->second) && horiz > 0)
+				bool moved = false;
+				const long double moveDistance = horiz*sampleTime;
+				for (map<float, ground*>::iterator itr = nearby->begin(); itr != nearby->end(); ++itr)
 				{
-					moveByDistanceX(itr->first - .001f);
-					m_movement.setHorizontalComp(0);
-					moved = true;
-					//can't slide down soemthing while standing on ground
-					if (!m_bOnGround)
-						m_pSlidingOn = itr->second;
-					break;
+					//if the distance to the object is greater than the amount moved, don't need to worry
+					//	about collision
+					if (itr->first > abs(moveDistance))
+						continue;
+					//if object in question is to the right of player and moving in positive dir
+					if (collision::leftOf(*this, *itr->second) && horiz > 0)
+					{
+						moveByDistanceX(itr->first - .001f);
+						m_movement.setHorizontalComp(0);
+						moved = true;
+						//can't slide down soemthing while standing on ground
+						if (!m_bOnGround && itr->second->height > 0.051f)
+							m_pSlidingOn = itr->second;
+						break;
+					}
+					//otherwise move by negative amt
+					else if (collision::rightOf(*this, *itr->second) && horiz < 0)
+					{
+						moveByDistanceX(-(itr->first - .001f));
+						m_movement.setHorizontalComp(0);
+						moved = true;
+						//can't slide down soemthing while standing on ground
+						if (!m_bOnGround && itr->second->height > 0.051f)
+							m_pSlidingOn = itr->second;
+						break;
+					}
 				}
-				//otherwise move by negative amt
-				else if (collision::rightOf(*this, *itr->second) && horiz < 0)
-				{
-					moveByDistanceX(-(itr->first - .001f));
-					m_movement.setHorizontalComp(0);
-					moved = true;
-					//can't slide down soemthing while standing on ground
-					if (!m_bOnGround)
-						m_pSlidingOn = itr->second;
-					break;
-				}
+				if (!moved)
+					moveByTimeX(sampleTime);
 			}
-			if (!moved)
-				moveByTimeX(timeDiff);
 		}
 	}
 }
@@ -370,6 +380,7 @@ void actor::startRoll( const long double & elapsed )
 		m_frame = 0;
 		m_oldHeight = height;
 		changeHeight( height*(1.0f/2.0f) );
+		setMaxMin();
 	}
 }
 

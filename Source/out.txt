@@ -1,0 +1,123 @@
+
+Generating Navigation Mesh... 
+Calculating paths for platform at (0, -1)
+
+Calculating paths for platform at (0.475, -0.575)
+	Added a path to platform at (0, -1)
+	Added a path to platform at (1.05, -0.275)
+	Added a path to platform at (-0.4, -0.475)
+	Added a path to platform at (0, -1)
+	Added a path to platform at (1.05, -0.275)
+
+Calculating paths for platform at (1.05, -0.275)
+	Added a path to platform at (0.475, -0.575)
+	Added a path to platform at (0, -1)
+	Added a path to platform at (1.775, 0.075)
+
+Calculating paths for platform at (1.775, 0.075)
+	Added a path to platform at (1.05, -0.275)
+	Added a path to platform at (0.775, 0.275)
+	Added a path to platform at (0, -1)
+
+Calculating paths for platform at (0.775, 0.275)
+	Added a path to platform at (0.05, 0.175)
+	Added a path to platform at (0, -1)
+
+Calculating paths for platform at (0.05, 0.175)
+	Added a path to platform at (0, -1)
+	Added a path to platform at (-0.55, 0.425)
+	Added a path to platform at (0.775, 0.275)
+	Added a path to platform at (-0.55, 0.425)
+
+Calculating paths for platform at (-0.55, 0.425)
+	Added a path to platform at (0, -1)
+	Added a path to platform at (0.05, 0.175)
+
+Calculating paths for platform at (-0.4, -0.475)
+	Added a path to platform at (0, -1)
+	Added a path to platform at (0, -1)
+	Added a path to platform at (-0.95, -0.175)
+	Added a path to platform at (-0.95, -0.175)
+
+Calculating paths for platform at (-0.95, -0.175)
+	Added a path to platform at (0, -1)
+	Added a path to platform at (-0.4, -0.475)
+
+Calculating reciprocal paths for platform at (0, -1)
+	Added a path to platform at (0.475, -0.575)
+
+Calculating reciprocal paths for platform at (0, -1)
+
+Calculating reciprocal paths for platform at (0.475, -0.575)
+	Added a path to platform at (1.05, -0.275)
+
+Calculating reciprocal paths for platform at (0, -1)
+
+Calculating reciprocal paths for platform at (1.05, -0.275)
+	Added a path to platform at (1.775, 0.075)
+
+Calculating reciprocal paths for platform at (0, -1)
+
+Calculating reciprocal paths for platform at (0.05, 0.175)
+	Added a path to platform at (-0.55, 0.425)
+
+Calculating reciprocal paths for platform at (0, -1)
+
+Calculating reciprocal paths for platform at (0, -1)
+
+Calculating reciprocal paths for platform at (0, -1)
+
+Calculating reciprocal paths for platform at (0.05, 0.175)
+	Added a path to platform at (-0.55, 0.425)
+
+Calculating reciprocal paths for platform at (0, -1)
+
+Calculating reciprocal paths for platform at (0, -1)
+
+Calculating reciprocal paths for platform at (0, -1)
+
+Calculating reciprocal paths for platform at (-0.4, -0.475)
+	Added a path to platform at (-0.95, -0.175)
+Vertices: 9
+	Loc: (0, -1) hVal: 1
+	Loc: (0.475, -0.575) hVal: 1
+	Loc: (1.05, -0.275) hVal: 1
+	Loc: (1.775, 0.075) hVal: 1
+	Loc: (0.775, 0.275) hVal: 1
+	Loc: (0.05, 0.175) hVal: 1
+	Loc: (-0.55, 0.425) hVal: 1
+	Loc: (-0.4, -0.475) hVal: 1
+	Loc: (-0.95, -0.175) hVal: 1
+Edges: 31
+	Loc 1: (0.475, -0.575) Loc 2: (0, -1) Cost: 1
+	Loc 1: (0.475, -0.575) Loc 2: (1.05, -0.275) Cost: 1
+	Loc 1: (0.475, -0.575) Loc 2: (-0.4, -0.475) Cost: 1
+	Loc 1: (0.475, -0.575) Loc 2: (0, -1) Cost: 1
+	Loc 1: (0.475, -0.575) Loc 2: (1.05, -0.275) Cost: 1
+	Loc 1: (0.475, -0.575) Loc 2: (1.05, -0.275) Cost: 1
+	Loc 1: (1.05, -0.275) Loc 2: (0.475, -0.575) Cost: 1
+	Loc 1: (1.05, -0.275) Loc 2: (0, -1) Cost: 1
+	Loc 1: (1.05, -0.275) Loc 2: (1.775, 0.075) Cost: 1
+	Loc 1: (1.05, -0.275) Loc 2: (1.775, 0.075) Cost: 1
+	Loc 1: (1.775, 0.075) Loc 2: (1.05, -0.275) Cost: 1
+	Loc 1: (1.775, 0.075) Loc 2: (0.775, 0.275) Cost: 1
+	Loc 1: (1.775, 0.075) Loc 2: (0, -1) Cost: 1
+	Loc 1: (0.775, 0.275) Loc 2: (0.05, 0.175) Cost: 1
+	Loc 1: (0.775, 0.275) Loc 2: (0, -1) Cost: 1
+	Loc 1: (0.05, 0.175) Loc 2: (0, -1) Cost: 1
+	Loc 1: (0.05, 0.175) Loc 2: (-0.55, 0.425) Cost: 1
+	Loc 1: (0.05, 0.175) Loc 2: (0.775, 0.275) Cost: 1
+	Loc 1: (0.05, 0.175) Loc 2: (-0.55, 0.425) Cost: 1
+	Loc 1: (0.05, 0.175) Loc 2: (-0.55, 0.425) Cost: 1
+	Loc 1: (0.05, 0.175) Loc 2: (-0.55, 0.425) Cost: 1
+	Loc 1: (-0.55, 0.425) Loc 2: (0, -1) Cost: 1
+	Loc 1: (-0.55, 0.425) Loc 2: (0.05, 0.175) Cost: 1
+	Loc 1: (-0.4, -0.475) Loc 2: (0, -1) Cost: 1
+	Loc 1: (-0.4, -0.475) Loc 2: (0, -1) Cost: 1
+	Loc 1: (-0.4, -0.475) Loc 2: (-0.95, -0.175) Cost: 1
+	Loc 1: (-0.4, -0.475) Loc 2: (-0.95, -0.175) Cost: 1
+	Loc 1: (-0.4, -0.475) Loc 2: (-0.95, -0.175) Cost: 1
+	Loc 1: (-0.95, -0.175) Loc 2: (0, -1) Cost: 1
+	Loc 1: (-0.95, -0.175) Loc 2: (-0.4, -0.475) Cost: 1
+	Loc 1: (0, -1) Loc 2: (0.475, -0.575) Cost: 1
+

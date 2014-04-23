@@ -1,0 +1,52 @@
+FMOD: SystemI::init                  : FMOD Studio Version: 00010115 (46036)
+FMOD: SystemI::init                  : maxchannels = 32, flags = 00000000, extradriverdata = 0000000000000000
+FMOD: SystemI::close                 : 
+FMOD: SystemI::close                 : Stop all sounds
+FMOD: SystemI::close                 : Remove miscllaneous DSP stuff.
+FMOD: SystemI::close                 : done.
+
+FMOD: SystemI::init                  : Set up software engine
+FMOD: OutputWASAPI::enumerate        : Enumerating...
+FMOD: OutputWASAPI::enumerate        : Initialise COM library.
+FMOD: OutputWASAPI::enumerate        : Found Driver: "Speakers (High Definition Audio Device)".
+FMOD: OutputWASAPI::enumerate        : Found Driver: "Digital Audio (S/PDIF) (High Definition Audio Device)".
+FMOD: OutputWASAPI::enumerate        : Found Driver: "Digital Audio (S/PDIF) (High Definition Audio Device)".
+FMOD: OutputWASAPI::enumerate        : Found Driver: "Desktop Microphone (Microsoft® LifeCam HD-3000)".
+FMOD: OutputWASAPI::enumerate        : Found Driver: "Microphone (High Definition Audio Device)".
+FMOD: OutputWASAPI::enumerate        : Done.
+FMOD: OutputWASAPI::init             : Initialising...
+FMOD: OutputWASAPI::init             : Forcing output channels to match Windows mix format: 2 channel(s)
+FMOD: OutputWASAPI::init             : Done.
+FMOD: SpeakerLevelsPool::alloc       :   8224 bytes (0000007A8CEA9F70)
+FMOD: SpeakerLevelsPool::alloc       :   8224 bytes (0000007A8CEABFA0)
+FMOD: SpeakerLevelsPool::alloc       :   8224 bytes (0000007A8CEADFD0)
+FMOD: SpeakerLevelsPool::alloc       :   8224 bytes (0000007A8CEB0000)
+FMOD: SpeakerLevelsPool::alloc       :   8224 bytes (0000007A8CEB2030)
+FMOD: SpeakerLevelsPool::alloc       :   8224 bytes (0000007A8CEB4060)
+FMOD: SpeakerLevelsPool::alloc       :   8224 bytes (0000007A8CEB6090)
+FMOD: SpeakerLevelsPool::alloc       :   8224 bytes (0000007A8CEB80C0)
+FMOD: Thread::initThread             : Initializing FMOD (WASAPI) feeder thread.  priority 0
+FMOD: Thread::initThread             : - Stacksize 0.  Stack pointer 0000000000000000 : usesemaphore = 0 : sleeptime = 0
+FMOD: Thread::callback               : * FMOD (WASAPI) feeder thread started
+FMOD: Thread::initThread             : done.
+FMOD: OutputWASAPI::feederUpdate     : WASAPI feeder thread set to 'Audio' characteristic
+FMOD: Thread::initThread             : Initializing FMOD mixer thread.  priority 2
+FMOD: Thread::initThread             : - Stacksize 49152.  Stack pointer 0000000000000000 : usesemaphore = 1 : sleeptime = 0
+FMOD: Thread::callback               : * FMOD mixer thread started
+FMOD: Thread::initThread             : done.
+FMOD: SystemI::init                  : Set up emulated output
+FMOD: SystemI::init                  : create the channel pool
+FMOD: SystemI::init                  : Set up streamer
+FMOD: Thread::initThread             : Initializing FMOD stream thread.  priority 2
+FMOD: Thread::initThread             : - Stacksize 65536.  Stack pointer 0000000000000000 : usesemaphore = 0 : sleeptime = 10
+FMOD: Thread::callback               : * FMOD stream thread started
+FMOD: Thread::initThread             : done.
+FMOD: SystemI::init                  : done
+
+FMOD: SystemI::createSoundInternal   : filename = ../Assets/Sounds/jump.wav : mode 00000020
+FMOD: Debug_OutputTrace              : c:\jk\workspace\Build__1.1__API_Win\lowlevel_api\src\fmod_systemi.cpp(2264) : FMOD error (26) : File not found. 
+
+FMOD: SystemI::createSoundInternal   : filename = ../Assets/Sounds/run.mp3 : mode 00000020
+FMOD: Debug_OutputTrace              : c:\jk\workspace\Build__1.1__API_Win\lowlevel_api\src\fmod_systemi.cpp(2264) : FMOD error (26) : File not found. 
+
+FMOD: OutputWASAPI::feederUpdate     : Starvation detected in WASAPI output buffer!

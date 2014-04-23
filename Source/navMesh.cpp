@@ -82,7 +82,6 @@ void navMesh::generateAllNodes(const list<ground> &allGround, const float &maxRu
 		}
 	}
 	colorNodes();
-	cout << "Done" << endl;
 }
 
 double navMesh::calculateCost(navNode::navInfo info)
@@ -116,7 +115,7 @@ void navMesh::buildGraph(const list<ground> &allGround)
 				if (*ends[0] == *ends[1])
 					continue;
 				// starting w/ 1, costs need to be updated when npc wants to pathfind
-				Graph::Edge newEdge(ends, 1.0, &*innerItr, destItr->moveVector);
+				Graph::Edge newEdge(ends, 1.0, destItr->travelTime, &*innerItr, destItr->moveVector);
 				m_navGraph->addEdge(newEdge);
 			}
 		}

@@ -139,7 +139,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalLibraryDirectories>$(SolutionDir)\..\Libs\x64_rls;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>SOIL.lib;fmodL64_vc.lib.;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>SOIL.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

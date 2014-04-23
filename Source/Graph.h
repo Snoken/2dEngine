@@ -28,7 +28,8 @@ public:
 		navNode* startNode;
 		physics::vector moveVector;
 		double cost;
-		Edge(Vertex* ends[2], double cost, navNode* startNode, physics::vector moveVector);
+		double travelTime;
+		Edge(Vertex* ends[2], double cost, double travelTime, navNode* startNode, physics::vector moveVector);
 	};
 
 	void addVertex(const ground* plat, int hVal)
@@ -44,7 +45,7 @@ public:
 		delete m_pEdges;
 		delete m_pVertices;
 	}
-	void updateCosts(primitives::vertex startLoc);
+	void updateCosts(primitives::vertex startLoc, primitives::vertex endLoc);
 	list<Edge>* getEdges(){ return m_pEdges; }
 	list<Vertex>* getVertices(){ return m_pVertices; }
 	list<Edge*> getConnectedEdges(Vertex *theVertex);

@@ -126,7 +126,7 @@ void idleFunction(void)
 	//react based on which keys are pressed, only mouse is used in menu
 	if( !bDrawMenu )
 		input.processKeys(*mainScene, bEditing, elapsed, 
-			elapsed - prevElapsed, mainScene->getFSys(), mainScene->soundJump);
+			elapsed - prevElapsed);
 
 	//TODO: once MP is impld, updateActorLocations will need to be changed to two funcs
 	//	one to move the local player, and one to update AI which is only used by server.
@@ -171,7 +171,7 @@ void mouse(int btn, int state, int x, int y)
 		if (bEditing)
 		{
 			bDrawOutline = false;
-			input.mouseUp(*mainScene);
+			input.mouseUp(*mainScene, bEditing);
 		}
 	}
 	else if (btn == GLUT_RIGHT_BUTTON && state == GLUT_DOWN)
@@ -213,6 +213,9 @@ void checkUpdate(int x, int y)
 
 int main(int argc, char** argv)
 {
+	#ifdef _WIN32
+		FreeConsole();
+	#endif
 	//glut, glut, and more glut
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);

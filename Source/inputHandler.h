@@ -6,10 +6,7 @@
 #ifdef _WIN32
 	#include <Windows.h>
 	#include <direct.h>
-	#include "fmod/fmod.hpp"
 	#include <Commdlg.h>
-#else
-	#include "fmodex/fmod.hpp"
 #endif
 #include <map>
 #include "scene.h"
@@ -31,9 +28,9 @@ public:
 	void handleKeyUp(unsigned char key);
 	void handleKeyDown(unsigned char key, bool& bEditing, bool& bDrawMenu);
 	void processKeys(scene &mainScene, const bool& bEditing, const long double& elapsed, 
-		const double &timeDiff, FMOD::System* fSystem, FMOD::Sound* soundJump);
+		const double &timeDiff);
 	void mouseDown(scene &mainScene, const bool &bDrawMenu, const bool &bEditing, float aspect);
-	void mouseUp(scene &mainScene);
+	void mouseUp(scene &mainScene, const bool &bEditing);
 	map<int, bool>* getKeyMap()
 	{
 		return &keyMap;
@@ -41,7 +38,7 @@ public:
 private:
 	map<int, bool> keyMap;
 	void initKeyMap();
-#ifdef WIN32
+#ifdef _WIN32
 	void getFileWin(OPENFILENAME & ofn);
 #endif
 	primitives::vertex drawCenter;

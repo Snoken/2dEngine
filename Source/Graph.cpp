@@ -69,8 +69,8 @@ m_pVertices(verts), m_pEdges(edges), m_adjacencies(adjs)
 	}
 }
 
-Graph::Edge::Edge(Vertex* ends[2], double cost, navNode* startNode, physics::vector moveVector) : 
-	cost(cost), moveVector(moveVector)
+Graph::Edge::Edge(Vertex* ends[2], double cost, double travelTime, navNode* startNode, physics::vector moveVector) : 
+cost(cost), moveVector(moveVector), travelTime(travelTime)
 {
 	if (ends[0] == NULL)
 		throw runtime_error("Vertex one is NULL");
@@ -83,13 +83,32 @@ Graph::Edge::Edge(Vertex* ends[2], double cost, navNode* startNode, physics::vec
 	this->startNode = startNode;
 }
 
-void Graph::updateCosts(primitives::vertex startLoc)
+void Graph::updateCosts(primitives::vertex startLoc, primitives::vertex endLoc)
 {
 	for (list<Graph::Edge>::iterator itr = m_pEdges->begin(); itr != m_pEdges->end(); ++itr)
 	{
-		double xDiff = startLoc.x - itr->startNode->origin.x;
-		double yDiff = startLoc.y - itr->startNode->origin.y;
-		itr->cost = sqrt(pow(xDiff, 2.0) + pow(yDiff, 2.0)) + 4;
+		//path cost
+		// (horizontal distance to player + vertical distance to player ^ 2 + travel time +
+		//	linear distance to dest platform ^ 2) * 10;
+		double xDiff = abs(startLoc.x - itr->startNode->origin.x);
+		double yDiff = abs(startLoc.y - itr->startNode->origin.y);
+		itr->cost = (xDiff + pow(yDiff, 2.0) + itr->travelTime) * 10;
+
+		xDiff = itr->startNode->origin.x - itr->ends[1]->plat->origin.x;
+		yDiff = itr->startNode->origin.y - itr->ends[1]->plat->origin.y;
+		itr->cost += (pow(xDiff, 2.0) + pow(yDiff, 2.0)) * 10;
+
+		//cout << "Cost: " << itr->cost << endl;
+	}
+
+	for (list<Graph::Vertex>::iterator itr = m_pVertices->begin(); itr != m_pVertices->end(); ++itr)
+	{
+		// heuristic value
+		// linear distance from given platform to destination * 100;
+		double xDiff = itr->plat->origin.x - endLoc.x;
+		double yDiff = itr->plat->origin.y - endLoc.y;
+		itr->hVal = sqrt(pow(xDiff, 2.0) + pow(yDiff, 2.0)*100);
+		//cout << "hVal: " << itr->hVal << endl;
 	}
 }
 

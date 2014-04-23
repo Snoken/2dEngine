@@ -88,7 +88,8 @@ public:
 	void updateMult(const long double & elapsed, string dir);
 	void airFrameUpdate();
 	ActorState groundFrameUpdate( const long double & elapsed, ground *abovePlayer );
-	bool isMoving() { return m_movement.getHorizComp() != 0; }
+	bool isMoving() { return abs(m_movement.getHorizComp()) > 0.05f; }
+	bool moveDirection() { return m_movement.getHorizComp() > 0.0f; }
 	void getNearbyWalls(const float & maxDistance, map<float, ground*> &nearby, list<ground>* allGround);
 
 	float getRunSpeed(){ return m_runSpeed; }

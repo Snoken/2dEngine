@@ -1,22 +1,5 @@
 #include "scene.h"
 
-void scene::initSounds()
-{
-	//init FMOD
-	FMOD::System_Create(&fSystem);// create an instance of the game engine
-	fSystem->init(32, FMOD_INIT_NORMAL, 0);// initialise the game engine with 32 channels
-
-	//load sounds
-	fSystem->createSound("../Assets/Sounds/jump.wav", FMOD_HARDWARE, 0, &soundJump);
-	soundJump->setMode(FMOD_LOOP_OFF);
-
-	fSystem->createSound("../Assets/Sounds/run.mp3", FMOD_HARDWARE, 0, &soundRun);
-	soundRun->setMode(FMOD_LOOP_OFF);
-
-	//fSystem->createSound("../Assets/Sounds/ambient.mp3", FMOD_HARDWARE, 0, &soundMusic);
-	//soundMusic->setMode(FMOD_LOOP_NORMAL);
-}
-
 void scene::tryDelete()
 {
 	for (list<ground>::iterator itr = groundObjs.begin(); itr != groundObjs.end(); ++itr)
@@ -87,7 +70,7 @@ void scene::initOverlay()
 		m_aspect - .163f, .34f + .025f), .05f, .05f, 1800));
 
 	overlay.push_back(baseObject(primitives::vertex(
-		m_aspect - .0635f, .34f + .025f), .05f, .05f, 2700));
+		m_aspect - .0635f, .34f + .025f), .05f, .05f, 2700)) ;
 
 	//platform toggle box, texture used to identify object
 	overlay.push_back(baseObject(primitives::vertex(
@@ -131,6 +114,20 @@ void scene::updateProjectiles(long double elapsed)
 				deleted = true;
 				break;
 			}
+			else if (collision::inObject(temp.getLoc(), *player) && player != itr->getOwner())
+			{
+				player->takeDamage(itr->getDamage());
+				projectiles.remove(*itr++);
+				deleted = true;
+				break;
+			}
+			else if (collision::inObject(temp.getLoc(), *bot1) && bot1 != itr->getOwner())
+			{
+				bot1->takeDamage(itr->getDamage());
+				projectiles.remove(*itr++);
+				deleted = true;
+				break;
+			}
 		}
 		if (!deleted)
 		{
@@ -147,10 +144,9 @@ bool scene::needsDeleting(const primitives::vertex &loc)
 		gItr != groundObjs.end(); ++gItr)
 	{
 		if (collision::inObject(loc, *gItr))
-		{
 			return true;
-		}
 	}
+
 	return false;
 }
 
@@ -163,25 +159,6 @@ void scene::updateActorLocations(const long double & elapsed, const long double 
 	float maxDistance = 0.5f;
 	map<float, ground*> nearby;
 	player->getNearbyWalls(maxDistance, nearby, &groundObjs);
-	if (player->isMoving() && player->m_bOnGround)
-	{
-		if (runChan == NULL)
-		{
-			#ifdef WIN32
-				fSystem->playSound(soundRun, 0, false, &runChan);
-			#else
-				//fSystem->playSound(FMOD_CHANNEL_FREE, soundRun, false, &runChan);
-			#endif
-		}
-		else
-		{
-			#ifdef WIN32
-			if (runChan != NULL)
-				runChan->stop();
-			#endif
-			runChan = NULL;
-		}
-	}
 	player->updateLocation(elapsed, prevElapsed, belowPlayer, abovePlayer, &nearby, keyMap);
 
 	ground *belowbot1 = getCurrentGround(bot1);
@@ -189,6 +166,20 @@ void scene::updateActorLocations(const long double & elapsed, const long double 
 	maxDistance = 0.5f;
 	map<float, ground*> nearbyBot;
 	bot1->getNearbyWalls(maxDistance, nearbyBot, &groundObjs);
+
+	if (bot1->m_bFollowing && elapsed - bot1->m_lastFollowUpdate > 0.5 && player->isMoving())
+	{
+		bot1->m_lastFollowUpdate = elapsed;
+		primitives::vertex dest = player->origin;
+		
+		//if player is moving right
+		if (player->moveDirection())
+			dest.x -= 0.05f;
+		else
+			dest.x += 0.05f;
+		
+		bot1->setDest(dest, belowbot1, belowPlayer, m_mesh->getNavGraph());
+	}
 	bot1->updateLocation(elapsed, prevElapsed, belowbot1, abovebot1, &nearbyBot, keyMap);
 }
 
@@ -232,14 +223,18 @@ ground* scene::getCurrentCeiling(baseObject* act)
 
 navNode* scene::checkSelectedNode()
 {
+	navNode* theNode = NULL;
 	for (list<ground>::iterator objItr = groundObjs.begin(); objItr != groundObjs.end(); ++objItr)
 	{
-		list<navNode> nodes = m_mesh->getNodesForPlatform(&(*objItr));
-		for (list<navNode>::iterator itr = nodes.begin(); itr != nodes.end(); ++itr)
+		list<navNode>* pNodes = m_mesh->getNodesForPlatform(&(*objItr));
+		if (!pNodes)
+			continue;
+		for (list<navNode>::iterator itr = pNodes->begin(); itr != pNodes->end(); ++itr)
 		{
 			if (collision::inObject(m_clickLoc, (baseObject)*itr))
 			{
-				return &(*itr);
+				theNode = &(*itr);
+				return theNode;
 			}
 		}
 	}

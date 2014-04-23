@@ -159,10 +159,10 @@ void renderer::drawMenu(float &zoom, actor &player)
 	glColor4f(0.0f, 0.0f, 0.0f, 0.9f);
 	//faded black overlay
 	glBegin(GL_QUADS);
-	glVertex2f((itr->xMin + player.origin.x) / zoom, itr->yMin / zoom);
-	glVertex2f((itr->xMin + player.origin.x) / zoom, itr->yMax / zoom);
-	glVertex2f((itr->xMax + player.origin.x) / zoom, itr->yMax / zoom);
-	glVertex2f((itr->xMax + player.origin.x) / zoom, itr->yMin / zoom);
+	glVertex2f(itr->xMin / zoom + player.origin.x, itr->yMin / zoom);
+	glVertex2f(itr->xMin / zoom + player.origin.x, itr->yMax / zoom);
+	glVertex2f(itr->xMax / zoom + player.origin.x, itr->yMax / zoom);
+	glVertex2f(itr->xMax / zoom + player.origin.x, itr->yMin / zoom);
 	glEnd();
 	++itr;
 
@@ -174,10 +174,10 @@ void renderer::drawMenu(float &zoom, actor &player)
 		glBindTexture(GL_TEXTURE_2D, itr->texture);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		glBegin(GL_QUADS);
-		glTexCoord2f(0.0f, 0.0f); glVertex2f((itr->xMin + player.origin.x) / zoom, itr->yMin / zoom);
-		glTexCoord2f(0.0f, 1.0f); glVertex2f((itr->xMin + player.origin.x) / zoom, itr->yMax / zoom);
-		glTexCoord2f(1.0f, 1.0f); glVertex2f((itr->xMax + player.origin.x) / zoom, itr->yMax / zoom);
-		glTexCoord2f(1.0f, 0.0f); glVertex2f((itr->xMax + player.origin.x) / zoom, itr->yMin / zoom);
+		glTexCoord2f(0.0f, 0.0f); glVertex2f(itr->xMin / zoom + player.origin.x, itr->yMin / zoom);
+		glTexCoord2f(0.0f, 1.0f); glVertex2f(itr->xMin / zoom + player.origin.x, itr->yMax / zoom);
+		glTexCoord2f(1.0f, 1.0f); glVertex2f(itr->xMax / zoom + player.origin.x, itr->yMax / zoom);
+		glTexCoord2f(1.0f, 0.0f); glVertex2f(itr->xMax / zoom + player.origin.x, itr->yMin / zoom);
 		glEnd();
 	}
 	glDisable(GL_TEXTURE_2D);
@@ -491,15 +491,17 @@ void renderer::drawOverlay(actor &player, float &zoom, float &aspect, ground &se
 
 	temp = "Platform?";
 	glRasterPos2f((aspect - .485f + offset) / zoom, .23f / zoom);
-	glutBitmapString(GLUT_BITMAP_HELVETICA_12, (unsigned char*) temp.c_str());
+	glutBitmapString(GLUT_BITMAP_HELVETICA_12, (unsigned char*) temp.c_str()); 
 }
 
 void renderer::drawNavMesh(navMesh &m_mesh)
 {
 	for (list<ground>::iterator objItr = groundObjs->begin(); objItr != groundObjs->end(); ++objItr)
 	{
-		list<navNode> m_pNodes = m_mesh.getNodesForPlatform(&(*objItr));
-		for (list<navNode>::iterator nodeItr = m_pNodes.begin(); nodeItr != m_pNodes.end(); ++nodeItr)
+		list<navNode>* nodes = m_mesh.getNodesForPlatform(&(*objItr));
+		if (!nodes)
+			continue;
+		for (list<navNode>::iterator nodeItr = nodes->begin(); nodeItr != nodes->end(); ++nodeItr)
 			drawNode(*nodeItr);
 	}
 }
@@ -520,7 +522,7 @@ void renderer::drawNode(navNode &node)
 		glBegin(GL_LINES);
 		primitives::vertex loc = node.origin;
 		physics::vector moveVec = pathItr->moveVector;
-		int segments = 10;
+		int segments = 4;
 		for (int i = 0; i < segments; ++i)
 		{
 			glVertex2f(loc.x, loc.y);
